@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fokus Kerja</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header class="header">
+        <div class="brand">
+          <div class="logo">FK</div>
+          <span class="brand-title">Fokus<strong>Kerja</strong></span>
+        </div>
+        <span class="live-pill">Ekstensi</span>
+      </header>
+
+      <div class="card status-card">
+        <div class="card-label">Domain Tab Aktif</div>
+        <h1 id="domain">Tidak ada tab tercatat</h1>
+        <p id="usage" class="meta">Buka situs http/https untuk mulai timer.</p>
+        <p id="quote" class="quote" hidden></p>
+      </div>
+
+      <div class="session-box">
+        <div class="session-dot"></div>
+        <p id="session" class="session-text">Belum tersinkron.</p>
+      </div>
+
+      <div class="actions">
+        <button id="sync" type="button" class="btn-primary">Masuk &amp; Sinkronkan</button>
+        <button id="signout" type="button" class="btn-ghost" hidden>Putus Sesi</button>
+      </div>
+
+      <p id="status" class="hint"></p>
+    </main>
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>
+

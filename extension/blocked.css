@@ -1,0 +1,86 @@
+#fokus-kerja-block {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(1000px 500px at 50% 0%, rgba(37, 99, 235, 0.22), transparent 60%),
+    #090d16;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+#fokus-kerja-block * {
+  box-sizing: border-box;
+}
+
+#fokus-kerja-block .fokus-card {
+  max-width: 38rem;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(37, 99, 235, 0.15);
+  backdrop-filter: blur(16px);
+  border-radius: 24px;
+  padding: 36px 32px;
+  text-align: left;
+}
+
+#fokus-kerja-block .fokus-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  color: #60a5fa;
+  background: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  margin: 0 0 20px;
+}
+
+#fokus-kerja-block h1 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  line-height: 1.2;
+  margin: 0 0 16px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
+}
+
+#fokus-kerja-block .fokus-quote {
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.7);
+  border-left: 3px solid #3b82f6;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+#fokus-kerja-block .fokus-meta {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #93c5fd;
+  line-height: 1.5;
+}
+
+#fokus-kerja-block .fokus-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  border-top: 1px solid rgba(51, 65, 85, 0.5);
+  padding-top: 14px;
+}
+
