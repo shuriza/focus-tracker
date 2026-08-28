@@ -72,14 +72,14 @@ export default function Home() {
                 <Sparkles className="h-4 w-4" />
                 Mulai Atur Kuota
               </Link>
-              <Link
+              <a
                 href={EXTENSION_DOWNLOAD}
                 download
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
               >
                 <Download className="h-4 w-4" />
                 Unduh Ekstensi v1.2.0
-              </Link>
+              </a>
             </div>
 
             <Link
