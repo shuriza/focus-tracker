@@ -24,7 +24,16 @@ npm run dev
 5. Daftar/masuk di `http://localhost:3000/login`.
 6. Setelah login, ekstensi menyinkronkan sesi otomatis. Tombol **Masuk & Sinkronkan** di popup dapat dipakai untuk menghubungkan ulang akun.
 
-Paket ekstensi siap-pasang tersedia dari situs pada `/downloads/fokus-kerja-v1.1.0.zip`. Salin paket rilis baru ke `public/downloads/` saat menaikkan versi ekstensi.
+Paket ekstensi siap-pasang tersedia dari situs pada `/downloads/fokus-kerja-v1.2.0.zip`. Salin paket rilis baru ke `public/downloads/` saat menaikkan versi ekstensi.
+
+## Production release gate
+
+Sebelum deploy kode yang membaca `rules.active` atau `extension_status`, jalankan dulu `database/migrations/20260828_release_readiness.sql` di database tujuan. Urutan yang dipakai saat ini adalah migrasi dulu, baru deploy kode.
+
+Verifikasi aman dilakukan lewat schema/query yang terautentikasi atau probe PostgREST yang sudah disanitasi:
+- endpoint baru tidak lagi mengembalikan `PGRST205` atau `42703`;
+- akses kontrol aturan yang sudah ada tetap bisa dijangkau;
+- hasil probe hanya memeriksa keberadaan kolom/tabel dan respons autentikasi, bukan nilai rahasia atau data produksi.
 
 ## Perintah
 

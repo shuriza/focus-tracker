@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, Clock, Download, Laptop, ShieldCheck, Sparkles } from "lucide-react";
 
-const EXTENSION_DOWNLOAD = "/downloads/fokus-kerja-v1.1.0.zip";
+const EXTENSION_DOWNLOAD = "/downloads/fokus-kerja-v1.2.0.zip";
 
 export default function Home() {
   return (
@@ -78,7 +78,7 @@ export default function Home() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
               >
                 <Download className="h-4 w-4" />
-                Unduh Ekstensi v1.1.0
+                Unduh Ekstensi v1.2.0
               </Link>
             </div>
 

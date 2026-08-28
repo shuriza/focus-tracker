@@ -19,6 +19,18 @@ const rules: Rule[] = [
     domain: "youtube.com",
     time_limit_minutes: 30,
     category: "video",
+    active: true,
+    active_start_hour: null,
+    active_end_hour: null,
+    created_at: "2026-08-23T00:00:00Z",
+  },
+  {
+    id: "2",
+    user_id: "u",
+    domain: "x.com",
+    time_limit_minutes: 10,
+    category: "sosial",
+    active: false,
     active_start_hour: null,
     active_end_hour: null,
     created_at: "2026-08-23T00:00:00Z",
@@ -42,14 +54,22 @@ const rows: DailyAnalytic[] = [
     time_spent_seconds: 600,
     updated_at: "2026-08-23T00:00:00Z",
   },
+  {
+    id: "c",
+    user_id: "u",
+    domain: "x.com",
+    date: "2026-08-23",
+    time_spent_seconds: 1200,
+    updated_at: "2026-08-23T00:00:00Z",
+  },
 ];
 
 describe("buildWeekBuckets", () => {
-  it("counts over-limit minutes only for ruled domains", () => {
+  it("counts over-limit minutes only for active rules", () => {
     const week = buildWeekBuckets(rows, rules, new Date(2026, 7, 23));
     const sunday = week.at(-1);
     assert.equal(sunday?.date, "2026-08-23");
-    assert.equal(sunday?.totalMinutes, 50);
+    assert.equal(sunday?.totalMinutes, 70);
     assert.equal(sunday?.overLimitMinutes, 10);
   });
 
@@ -61,23 +81,30 @@ describe("buildWeekBuckets", () => {
 });
 
 describe("buildDomainUsage", () => {
-  it("sorts domains by time and attaches matching limits + category", () => {
+  it("sorts domains by time and ignores inactive limits", () => {
     const usage = buildDomainUsage(rows, rules);
     assert.equal(usage[0]?.domain, "youtube.com");
     assert.equal(usage[0]?.limitMinutes, 30);
     assert.equal(usage[0]?.category, "video");
     assert.equal(categoryLabel(usage[0]?.category ?? null), "Video & streaming");
+    assert.equal(usage[1]?.domain, "x.com");
     assert.equal(usage[1]?.limitMinutes, null);
+    assert.equal(usage[1]?.category, "sosial");
+    assert.equal(usage[2]?.limitMinutes, null);
   });
 });
 
 describe("buildTodayDomains", () => {
-  it("computes ratio, remaining and over flag", () => {
+  it("computes ratio, remaining and over flag for active rules only", () => {
     const today = buildTodayDomains(rows, rules, "2026-08-23");
     const youtube = today.find((d) => d.domain === "youtube.com");
     assert.equal(youtube?.ratio, 1);
     assert.equal(youtube?.over, true);
     assert.equal(youtube?.remainingSeconds, 0);
+    const x = today.find((d) => d.domain === "x.com");
+    assert.equal(x?.limitMinutes, null);
+    assert.equal(x?.over, false);
+    assert.equal(x?.remainingSeconds, 0);
     const github = today.find((d) => d.domain === "github.com");
     assert.equal(github?.limitMinutes, null);
     assert.equal(github?.over, false);

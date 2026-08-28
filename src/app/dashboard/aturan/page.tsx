@@ -1,17 +1,24 @@
+import Link from "next/link";
+import type { Metadata } from "next";
 import { SlidersHorizontal } from "lucide-react";
 import { RuleForm } from "@/components/RuleForm";
 import { RuleList } from "@/components/RuleList";
 import { hasSupabaseConfig } from "@/lib/env";
+import { getRulePreset, RULE_PRESETS } from "@/lib/presets";
 import { createClient } from "@/lib/supabase/server";
 import type { Rule } from "@/lib/types";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Aturan",
 };
 
 export const dynamic = "force-dynamic";
 
-export default async function RulesPage() {
+export default async function RulesPage({
+  searchParams,
+}: {
+  searchParams?: { edit?: string; preset?: string };
+}) {
   if (!hasSupabaseConfig()) {
     return (
       <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-900">
@@ -33,10 +40,13 @@ export default async function RulesPage() {
   }
 
   const rules = (data ?? []) as Rule[];
+  const activeRules = rules.filter((rule) => rule.active !== false);
+  const inactiveCount = rules.length - activeRules.length;
+  const editRule = searchParams?.edit ? rules.find((rule) => rule.id === searchParams.edit) ?? null : null;
+  const preset = editRule ? null : getRulePreset(searchParams?.preset);
 
   return (
     <main className="space-y-8">
-      {/* Header */}
       <div>
         <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-0.5 text-xs font-semibold text-blue-700">
           <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -50,28 +60,56 @@ export default async function RulesPage() {
         </p>
       </div>
 
-      {/* Add / Update Rule Form Card */}
       <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm">
         <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-base font-bold text-slate-900">Tambah atau Perbarui Kuota</h2>
-          <p className="text-xs text-slate-500">
-            Domain yang sudah terdaftar akan otomatis diperbarui dengan batas waktu yang baru.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">
+                {editRule ? `Ubah Kuota ${editRule.domain}` : "Tambah atau Perbarui Kuota"}
+              </h2>
+              <p className="text-xs text-slate-500">
+                {editRule
+                  ? "Simpan perubahan untuk domain yang dipilih."
+                  : "Domain yang sudah terdaftar akan otomatis diperbarui dengan batas waktu yang baru."}
+              </p>
+            </div>
+            <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700">
+              {activeRules.length} aktif · {inactiveCount} nonaktif
+            </span>
+          </div>
         </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {RULE_PRESETS.map((item) => {
+            const selected = !editRule && preset?.key === item.key;
+            return (
+              <Link
+                key={item.key}
+                href={`/dashboard/aturan?preset=${item.key}`}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${selected ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"}`}
+              >
+                <span>{item.label}</span>
+                <span className="text-[11px] font-medium text-slate-500">
+                  {item.domain} · {item.time_limit_minutes} mnt
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
         <div className="mt-5">
-          <RuleForm />
+          <RuleForm key={editRule?.id ?? preset?.key ?? "create"} editRule={editRule} preset={preset} />
         </div>
       </section>
 
-      {/* Active Rules List */}
       <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Kuota Aktif</h2>
-            <p className="text-xs text-slate-500">Daftar domain yang sedang diawasi oleh pemblokir</p>
+            <h2 className="text-base font-bold text-slate-900">Semua Aturan</h2>
+            <p className="text-xs text-slate-500">Aktifkan, nonaktifkan, ubah, atau hapus kuota domain kapan saja</p>
           </div>
-          <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100">
-            {rules.length} domain
+          <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700">
+            {activeRules.length} aktif / {inactiveCount} nonaktif
           </span>
         </div>
         <div className="mt-5">
@@ -81,4 +119,3 @@ export default async function RulesPage() {
     </main>
   );
 }
-

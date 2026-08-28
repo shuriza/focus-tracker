@@ -1,6 +1,7 @@
 import {
   findRule,
   formatDuration,
+  isRuleActive,
   isRuleEnforced,
   isTrackableUrl,
   normalizeDomain,
@@ -11,6 +12,9 @@ import {
 const TICK_ALARM = "fokus-tick";
 const SYNC_ALARM = "fokus-sync";
 const DEFAULT_DASHBOARD = "https://focus-tracker-one-wheat.vercel.app";
+const MANIFEST = chrome.runtime.getManifest();
+const EXTENSION_VERSION = String(MANIFEST.version ?? "unknown");
+const MANIFEST_VERSION = String(MANIFEST.manifest_version ?? 3);
 
 const defaultState = () => ({
   session: null,
@@ -72,7 +76,7 @@ async function setBadge(state, domain) {
   }
   const rule = findRule(domain, state.rules);
   const used = usedSeconds(state, domain);
-  if (!rule) {
+  if (!rule || !isRuleActive(rule)) {
     await chrome.action.setBadgeBackgroundColor({ color: "#2f5d50" });
     await chrome.action.setBadgeText({ text: formatBadge(used) });
     return;
@@ -118,14 +122,15 @@ async function notifyTab(tabId, state, domain) {
   if (!tabId || !domain) return;
   const rule = findRule(domain, state.rules);
   const used = usedSeconds(state, domain);
-  const active = rule ? isRuleEnforced(rule) : true;
-  const blocked = Boolean(rule && active && used >= rule.time_limit_minutes * 60);
+  const ruleStatus = rule ? (isRuleActive(rule) ? "active" : "inactive") : "none";
+  const blocked = Boolean(rule && isRuleEnforced(rule) && used >= rule.time_limit_minutes * 60);
   const payload = {
     type: "FOKUS_STATUS",
     domain,
     usedSeconds: used,
-    limitMinutes: rule?.time_limit_minutes ?? null,
+    limitMinutes: rule && isRuleActive(rule) ? rule.time_limit_minutes : null,
     blocked,
+    ruleStatus,
     quote: quoteForDomain(domain, todayISO()),
     formatted: formatDuration(used),
   };
@@ -177,6 +182,64 @@ async function supabaseHeaders(state) {
   };
 }
 
+function sanitizeHeartbeatError(value) {
+  if (!value) return null;
+  const text = String(value)
+    .replace(/(access_token|refresh_token)=([^&\s]+)/gi, "$1=[redacted]")
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer [redacted]")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return null;
+  return text.slice(0, 160);
+}
+
+function buildHeartbeatRecord(state, { status = "connected", lastSyncAt = null, lastError = null } = {}) {
+  const userId = state.session?.user?.id;
+  if (!userId) return null;
+  return {
+    user_id: userId,
+    state,
+    extension_version: EXTENSION_VERSION,
+    manifest_version: MANIFEST_VERSION,
+    last_seen_at: new Date().toISOString(),
+    ...(lastSyncAt ? { last_sync_at: lastSyncAt } : {}),
+    pending_sync_count: Object.keys(state.pendingSync).length,
+    last_error: sanitizeHeartbeatError(lastError),
+  };
+}
+
+async function upsertExtensionStatus(state, options = {}) {
+  const headers = await supabaseHeaders(state);
+  const payload = buildHeartbeatRecord(state, options);
+  if (!headers || !payload) return false;
+
+  const response = await fetch(state.supabaseUrl + "/rest/v1/extension_status?on_conflict=user_id", {
+    method: "POST",
+    headers: {
+      ...headers,
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (response.status === 401 && (await refreshSession(state))) {
+    return upsertExtensionStatus(state, options);
+  }
+  return response.ok;
+}
+
+async function syncRemoteAndHeartbeat(state, errorLabel) {
+  const pull = await pullRemote(state);
+  const push = await pushPending(state);
+  if (pull.ok && push.ok) {
+    await upsertExtensionStatus(state, { status: "connected", lastSyncAt: new Date().toISOString() });
+    return { ok: true, error: null };
+  }
+
+  const error = pull.error ?? push.error ?? (errorLabel + " gagal.");
+  await upsertExtensionStatus(state, { status: "error", lastError: error });
+  return { ok: false, error };
+}
+
 async function refreshSession(state) {
   if (!state.session?.refresh_token || !state.supabaseUrl || !state.supabaseAnonKey) {
     return false;
@@ -205,66 +268,109 @@ async function refreshSession(state) {
 
 async function pullRemote(state) {
   const headers = await supabaseHeaders(state);
-  if (!headers) return;
+  if (!headers) return { ok: false, error: "session_unavailable" };
   const userId = state.session?.user?.id;
-  if (!userId) return;
+  if (!userId) return { ok: false, error: "session_unavailable" };
 
-  const rulesRes = await fetch(
-    `${state.supabaseUrl}/rest/v1/rules?user_id=eq.${userId}&select=*`,
-    { headers },
-  );
-  if (rulesRes.status === 401 && (await refreshSession(state))) {
-    return pullRemote(state);
-  }
-  if (rulesRes.ok) {
+  try {
+    const rulesRes = await fetch(
+      state.supabaseUrl + "/rest/v1/rules?user_id=eq." + userId + "&select=*",
+      { headers },
+    );
+    if (rulesRes.status === 401 && (await refreshSession(state))) {
+      return pullRemote(state);
+    }
+    if (rulesRes.status === 401) {
+      return { ok: false, error: "Sesi kedaluwarsa. Sinkronisasi ulang diperlukan." };
+    }
+    if (!rulesRes.ok) {
+      return { ok: false, error: "Gagal memuat aturan (" + rulesRes.status + ")." };
+    }
     state.rules = await rulesRes.json();
-  }
 
-  const since = todayISO(new Date(Date.now() - 6 * 86400000));
-  const usageRes = await fetch(
-    `${state.supabaseUrl}/rest/v1/daily_analytics?user_id=eq.${userId}&date=gte.${since}&select=domain,date,time_spent_seconds`,
-    { headers },
-  );
-  if (usageRes.ok) {
+    const since = todayISO(new Date(Date.now() - 6 * 86400000));
+    const usageRes = await fetch(
+      state.supabaseUrl +
+        "/rest/v1/daily_analytics?user_id=eq." +
+        userId +
+        "&date=gte." +
+        since +
+        "&select=domain,date,time_spent_seconds",
+      { headers },
+    );
+    if (usageRes.status === 401 && (await refreshSession(state))) {
+      return pullRemote(state);
+    }
+    if (usageRes.status === 401) {
+      return { ok: false, error: "Sesi kedaluwarsa. Sinkronisasi ulang diperlukan." };
+    }
+    if (!usageRes.ok) {
+      return { ok: false, error: "Gagal memuat analitik (" + usageRes.status + ")." };
+    }
+
     const rows = await usageRes.json();
     for (const row of rows) {
       const key = usageKey(row.domain, row.date);
       const local = state.usage[key] ?? 0;
-      state.usage[key] = Math.max(local, row.time_spent_seconds ?? 0);
+      if (local < row.time_spent_seconds) {
+        state.usage[key] = row.time_spent_seconds;
+      }
     }
+
+    return { ok: true, error: null };
+  } catch (error) {
+    return {
+      ok: false,
+      error: sanitizeHeartbeatError(error?.message ?? "Sinkronisasi data gagal.") ?? "Sinkronisasi data gagal.",
+    };
   }
 }
+
 
 async function pushPending(state) {
   const headers = await supabaseHeaders(state);
-  if (!headers) return;
+  if (!headers) return { ok: false, error: "session_unavailable" };
   const entries = Object.entries(state.pendingSync);
-  if (entries.length === 0) return;
+  if (entries.length === 0) return { ok: true, error: null };
 
-  for (const [key, seconds] of entries) {
-    if (!seconds) {
+  try {
+    for (const [key, seconds] of entries) {
+      if (!seconds) {
+        delete state.pendingSync[key];
+        continue;
+      }
+      const [date, ...domainParts] = key.split(":");
+      const domain = domainParts.join(":");
+      const response = await fetch(state.supabaseUrl + "/rest/v1/rpc/increment_daily_time", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          p_domain: domain,
+          p_seconds: seconds,
+          p_date: date,
+        }),
+      });
+      if (response.status === 401 && (await refreshSession(state))) {
+        return pushPending(state);
+      }
+      if (response.status === 401) {
+        return { ok: false, error: "Sesi kedaluwarsa. Sinkronisasi ulang diperlukan." };
+      }
+      if (!response.ok) {
+        return { ok: false, error: "Gagal mengirim antrean (" + response.status + ")." };
+      }
       delete state.pendingSync[key];
-      continue;
     }
-    const [date, ...domainParts] = key.split(":");
-    const domain = domainParts.join(":");
-    const response = await fetch(`${state.supabaseUrl}/rest/v1/rpc/increment_daily_time`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        p_domain: domain,
-        p_seconds: seconds,
-        p_date: date,
-      }),
-    });
-    if (response.status === 401 && (await refreshSession(state))) {
-      return pushPending(state);
-    }
-    if (response.ok) {
-      delete state.pendingSync[key];
-    }
+
+    return { ok: true, error: null };
+  } catch (error) {
+    return {
+      ok: false,
+      error: sanitizeHeartbeatError(error?.message ?? "Pengiriman antrean gagal.") ?? "Pengiriman antrean gagal.",
+    };
   }
 }
+
 
 async function findDashboardTab(base) {
   const pattern = `${base}/*`;
@@ -323,10 +429,10 @@ async function syncCompletedDashboardTab(tabId, url) {
   if (!url?.startsWith(`${base}/`)) return;
   const result = await syncFromDashboard(state, { tabId });
   if (!result.ok) return;
-  await pullRemote(state);
-  await pushPending(state);
+  await syncRemoteAndHeartbeat(state, "Sinkronisasi dashboard");
   await saveState(state);
 }
+
 
 async function tick() {
   const state = await loadState();
@@ -339,12 +445,12 @@ async function sync() {
   const state = await loadState();
   await flushActive(state);
   if (state.session) {
-    await pushPending(state);
-    await pullRemote(state);
+    await syncRemoteAndHeartbeat(state, "Sinkronisasi otomatis");
   }
   await trackActiveTab(state);
   await saveState(state);
 }
+
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   await ensureAlarms();
@@ -403,11 +509,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         ? normalizeDomain(message.domain)
         : state.active.domain;
       const rule = domain ? findRule(domain, state.rules) : null;
+      const ruleStatus = rule ? (isRuleActive(rule) ? "active" : "inactive") : "none";
       sendResponse({
         domain,
         usedSeconds: domain ? usedSeconds(state, domain) : 0,
-        limitMinutes: rule?.time_limit_minutes ?? null,
+        limitMinutes: rule && isRuleActive(rule) ? rule.time_limit_minutes : null,
         blocked: domain ? isOverLimit(state, domain) : false,
+        ruleStatus,
         quote: domain ? quoteForDomain(domain, todayISO()) : "",
         signedIn: Boolean(state.session),
         email: state.session?.user?.email ?? null,
@@ -420,18 +528,25 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === "FOKUS_SYNC_SESSION") {
       const result = await syncFromDashboard(state, { openLogin: true });
       if (result.ok) {
-        await pullRemote(state);
-        await pushPending(state);
+        const syncResult = await syncRemoteAndHeartbeat(state, "Sinkronisasi manual");
+        await saveState(state);
+        sendResponse({
+          ok: syncResult.ok,
+          reason: syncResult.ok ? null : syncResult.error,
+          signedIn: Boolean(state.session),
+          email: state.session?.user?.email ?? null,
+        });
+        return;
       }
-      await saveState(state);
       sendResponse({
-        ok: result.ok,
+        ok: false,
         reason: result.reason ?? null,
         signedIn: Boolean(state.session),
         email: state.session?.user?.email ?? null,
       });
       return;
     }
+
     if (message?.type === "FOKUS_SIGNOUT") {
       state.session = null;
       await saveState(state);

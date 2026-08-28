@@ -16,12 +16,13 @@ function render(status) {
     quoteEl.hidden = true;
   } else {
     domainEl.textContent = status.domain;
-    const limit = status.limitMinutes
-      ? ` dari ${status.limitMinutes} menit`
-      : " · tanpa kuota";
-    usageEl.textContent = `${formatDuration(status.usedSeconds)}${limit}${
-      status.blocked ? " · diblokir" : ""
-    }`;
+    let suffix = " · tanpa kuota";
+    if (status.ruleStatus === "inactive") {
+      suffix = " · kuota nonaktif";
+    } else if (status.limitMinutes) {
+      suffix = ` dari ${status.limitMinutes} menit`;
+    }
+    usageEl.textContent = `${formatDuration(status.usedSeconds)}${suffix}${status.blocked ? " · diblokir" : ""}`;
     if (status.blocked) {
       quoteEl.hidden = false;
       quoteEl.textContent = status.quote;

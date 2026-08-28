@@ -1,4 +1,15 @@
-import { Download, Flame, Clock, BarChart3, ShieldAlert, Calendar } from "lucide-react";
+import Link from "next/link";
+import {
+  Download,
+  Flame,
+  Clock,
+  BarChart3,
+  ShieldAlert,
+  Calendar,
+  ArrowRight,
+  Laptop,
+  SlidersHorizontal,
+} from "lucide-react";
 import { DomainBars } from "@/components/DomainBars";
 import { TodayProgress } from "@/components/TodayProgress";
 import { WeekChart } from "@/components/WeekChart";
@@ -11,8 +22,9 @@ import {
 } from "@/lib/analytics";
 import { hasSupabaseConfig } from "@/lib/env";
 import { formatDuration, lastNDates, longDateLabel, todayISO } from "@/lib/time";
+import { formatHeartbeatAge, summarizeExtensionStatus } from "@/lib/extension-status";
 import { createClient } from "@/lib/supabase/server";
-import type { DailyAnalytic, Rule } from "@/lib/types";
+import type { DailyAnalytic, ExtensionStatus, Rule } from "@/lib/types";
 
 export const metadata = {
   title: "Minggu ini",
@@ -33,17 +45,19 @@ export default async function DashboardPage() {
   const since = lastNDates(14)[0];
   const today = todayISO();
 
-  const [rulesResult, analyticsResult] = await Promise.all([
+  const [rulesResult, analyticsResult, statusResult] = await Promise.all([
     supabase.from("rules").select("*").order("domain"),
     supabase
       .from("daily_analytics")
       .select("*")
       .gte("date", since)
       .order("date", { ascending: true }),
+    supabase.from("extension_status").select("*").maybeSingle(),
   ]);
 
-  if (rulesResult.error || analyticsResult.error) {
-    const message = rulesResult.error?.message ?? analyticsResult.error?.message;
+  if (rulesResult.error || analyticsResult.error || statusResult.error) {
+    const message =
+      rulesResult.error?.message ?? analyticsResult.error?.message ?? statusResult.error?.message;
     return (
       <section className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 shadow-sm">
         <p className="font-semibold text-rose-900">Gagal memuat data analitik</p>
@@ -53,7 +67,11 @@ export default async function DashboardPage() {
   }
 
   const rules = (rulesResult.data ?? []) as Rule[];
+  const activeRules = rules.filter((rule) => rule.active !== false);
   const rows = (analyticsResult.data ?? []) as DailyAnalytic[];
+  const extensionStatus = (statusResult.data ?? null) as ExtensionStatus | null;
+  const statusView = summarizeExtensionStatus(extensionStatus, new Date());
+  const hasUsage = rows.some((row) => row.time_spent_seconds > 0);
   const allBuckets = buildWeekBuckets(rows, rules, new Date(), 14);
   const week = allBuckets.slice(-7);
   const domains = buildDomainUsage(rows, rules);
@@ -97,6 +115,87 @@ export default async function DashboardPage() {
           Unduh CSV
         </a>
       </div>
+
+      <section
+        aria-live="polite"
+        aria-labelledby="extension-status-title"
+        className={STATUS_TONES[statusView.tone].root + " rounded-2xl border p-5 shadow-sm"}
+      >
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <span
+              className={STATUS_TONES[statusView.tone].pill + " inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider"}
+            >
+              Status ekstensi
+            </span>
+            <div>
+              <h2 id="extension-status-title" className="text-lg font-bold tracking-tight text-slate-900">
+                {statusView.title}
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">{statusView.message}</p>
+              <p className="mt-2 text-xs font-semibold text-slate-500">{statusView.meta}</p>
+            </div>
+          </div>
+
+          <Link
+            href="/panduan"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-blue-600"
+          >
+            Buka panduan
+          </Link>
+        </div>
+
+        <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+          <StatusStat label="Heartbeat terakhir" value={formatHeartbeatAge(extensionStatus?.last_seen_at, new Date())} />
+          <StatusStat label="Sinkron terakhir" value={formatHeartbeatAge(extensionStatus?.last_sync_at, new Date())} />
+          <StatusStat
+            label="Antrean lokal"
+            value={String(Math.max(0, extensionStatus?.pending_sync_count ?? 0)) + " item"}
+          />
+        </dl>
+
+        {statusView.state === "error" && extensionStatus?.last_error ? (
+          <p className="mt-4 rounded-xl border border-rose-200 bg-white/70 px-4 py-3 text-sm leading-relaxed text-rose-800">
+            {extensionStatus.last_error}
+          </p>
+        ) : null}
+      </section>
+
+      {activeRules.length === 0 && !hasUsage ? (
+        <section className="rounded-2xl border border-blue-200 bg-blue-50/70 p-5 shadow-sm">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-blue-700">
+                Mulai dari sini
+              </p>
+              <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900">
+                Dashboard siap mencatat fokusmu.
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">
+                Pasang ekstensi Chrome dan buat kuota pertama. Setelah kamu membuka situs
+                yang dipantau, aktivitas akan muncul di halaman ini.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Link
+                href="/panduan"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2.5 text-xs font-semibold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700"
+              >
+                <Laptop className="h-3.5 w-3.5" />
+                Pasang ekstensi
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <Link
+                href="/dashboard/aturan"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Buat kuota
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* KPI Cards Grid */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -213,6 +312,34 @@ function Kpi({
     </article>
   );
 }
+
+function StatusStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-4">
+      <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</dt>
+      <dd className="mt-1 text-sm font-semibold text-slate-900">{value}</dd>
+    </div>
+  );
+}
+
+const STATUS_TONES = {
+  emerald: {
+    root: "border-emerald-200 bg-emerald-50/70",
+    pill: "bg-emerald-600 text-white",
+  },
+  amber: {
+    root: "border-amber-200 bg-amber-50/75",
+    pill: "bg-amber-600 text-white",
+  },
+  slate: {
+    root: "border-slate-200 bg-slate-50",
+    pill: "bg-slate-700 text-white",
+  },
+  rose: {
+    root: "border-rose-200 bg-rose-50/75",
+    pill: "bg-rose-600 text-white",
+  },
+} as const;
 
 function trendHint(
   trend: { value: number | null; direction: "up" | "down" },

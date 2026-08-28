@@ -46,5 +46,3 @@ next-env.d.ts
 /.opencode-context-archive.md
 /.opencode-jce/
 /.playwright-mcp/
-
-.vercel

@@ -42,6 +42,15 @@ export function formatDuration(totalSeconds) {
   return `${rest}s`;
 }
 
+export function quoteForDomain(domain, dateISO) {
+  const seed = `${domain}:${dateISO}`;
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return QUOTES[hash % QUOTES.length];
+}
+
 export const QUOTES = [
   "Batas hari ini sudah terpakai. Kembali ke pekerjaan yang kamu janjikan pada dirimu sendiri.",
   "Fokus bukan larangan. Ini janji: waktu tersisa untuk kerja yang penting.",
@@ -53,20 +62,12 @@ export const QUOTES = [
   "Perhatianmu mahal. Jangan habiskan untuk timeline yang tidak ingat namamu.",
 ];
 
-export function quoteForDomain(domain, dateISO) {
-  const seed = `${domain}:${dateISO}`;
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return QUOTES[hash % QUOTES.length];
-}
-
-export function findRule(domain, rules) {
-  return (rules ?? []).find((rule) => domainMatches(domain, rule.domain)) ?? null;
+export function isRuleActive(rule) {
+  return Boolean(rule && rule.active !== false);
 }
 
 export function isRuleEnforced(rule, now = new Date()) {
+  if (!isRuleActive(rule)) return false;
   const start = rule?.active_start_hour;
   const end = rule?.active_end_hour;
   if (start == null || end == null) return true;

@@ -54,6 +54,11 @@ export default function PrivacyPage() {
                 <strong>Aturan kuota</strong> — daftar domain, batas menit harian, kategori, dan
                 jadwal blokir yang kamu tetapkan.
               </li>
+              <li>
+                <strong>Status koneksi ekstensi</strong> — state sinkron, versi ekstensi, versi
+                manifest, waktu heartbeat terakhir, waktu sinkron sukses terakhir, jumlah antrean
+                lokal yang belum terkirim, dan pesan error yang sudah dibatasi serta disanitasi.
+              </li>
             </ul>
           </Section>
 
@@ -74,14 +79,17 @@ export default function PrivacyPage() {
               <li>Menampilkan grafik mingguan dan rekap durasi di akunmu.</li>
               <li>Menerapkan kuota harian dan memblokir situs saat batas habis.</li>
               <li>Sinkronisasi aturan antar perangkat yang memakai akun yang sama.</li>
+              <li>Menunjukkan kesehatan koneksi dan sinkron ekstensi di dashboard.</li>
             </ul>
           </Section>
 
           <Section title="Penyimpanan & keamanan">
             <p>
               Data disimpan di Postgres lewat Supabase dengan <em>Row Level Security</em>: setiap
-              pengguna hanya dapat mengakses baris miliknya sendiri. Status sementara juga disimpan
-              secara lokal di <code>chrome.storage.local</code> pada browsermu.
+              pengguna hanya dapat mengakses baris miliknya sendiri. Status heartbeat hanya memuat
+              data status koneksi dan sinkron, tanpa menyimpan access token atau refresh token.
+              Status sementara juga disimpan secara lokal di <code>chrome.storage.local</code> pada
+              browsermu.
             </p>
           </Section>
 
@@ -94,9 +102,9 @@ export default function PrivacyPage() {
 
           <Section title="Hakmu">
             <p>
-              Kamu dapat menghapus seluruh aturan dan jejakmu kapan saja dari dashboard, atau
-              menghapus akun melalui penyedia autentikasi (Supabase). Setelah dihapus, data tidak
-              dapat dipulihkan.
+              Kamu dapat meninjau, memperbarui, dan menonaktifkan aturan dari dashboard kapan saja.
+              Jika kamu memilih menghapus akun melalui penyedia autentikasi (Supabase), data yang
+              terkait akun akan mengikuti proses penghapusan di layanan tersebut.
             </p>
           </Section>
 
@@ -108,7 +116,7 @@ export default function PrivacyPage() {
           </Section>
 
           <p className="text-xs text-slate-400">
-            Terakhir diperbarui: 23 Agustus 2026.
+            Terakhir diperbarui: 28 Agustus 2026.
           </p>
         </div>
       </main>

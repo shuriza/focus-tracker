@@ -13,6 +13,7 @@ export async function createRule(
   _prev: RuleActionState,
   formData: FormData,
 ): Promise<RuleActionState> {
+  const id = String(formData.get("id") ?? "");
   const domain = normalizeDomain(String(formData.get("domain") ?? ""));
   const minutes = Number(formData.get("time_limit_minutes"));
   const rawCategory = String(formData.get("category") ?? "lainnya");
@@ -49,17 +50,27 @@ export async function createRule(
     return { error: "Sesi berakhir. Masuk lagi." };
   }
 
-  const { error } = await supabase.from("rules").upsert(
-    {
-      user_id: user.id,
-      domain,
-      time_limit_minutes: Math.round(minutes),
-      category,
-      active_start_hour,
-      active_end_hour,
-    },
-    { onConflict: "user_id,domain" },
-  );
+  const payload = {
+    domain,
+    time_limit_minutes: Math.round(minutes),
+    category,
+    active_start_hour,
+    active_end_hour,
+  };
+
+  const { error } = id
+    ? await supabase
+        .from("rules")
+        .update(payload)
+        .eq("id", id)
+        .eq("user_id", user.id)
+    : await supabase.from("rules").upsert(
+        {
+          user_id: user.id,
+          ...payload,
+        },
+        { onConflict: "user_id,domain" },
+      );
 
   if (error) {
     return { error: error.message };
@@ -68,6 +79,23 @@ export async function createRule(
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/aturan");
   return { error: null };
+}
+
+export async function toggleRuleActive(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "");
+  const rawActive = String(formData.get("active") ?? "");
+  const active = rawActive === "true" ? true : rawActive === "false" ? false : null;
+  if (!id || active === null) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("rules").update({ active }).eq("id", id).eq("user_id", user.id);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/aturan");
 }
 
 export async function deleteRule(formData: FormData): Promise<void> {

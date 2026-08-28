@@ -1,4 +1,4 @@
-import type {
+import {
   DailyAnalytic,
   DayBucket,
   DomainUsage,
@@ -8,9 +8,11 @@ import type {
 import { domainMatches, lastNDates, weekdayLabel } from "./time";
 
 export function findRuleForDomain(domain: string, rules: Rule[]): Rule | null {
-  return (
-    rules.find((rule) => domainMatches(domain, rule.domain)) ?? null
-  );
+  return rules.find((rule) => domainMatches(domain, rule.domain)) ?? null;
+}
+
+function isActiveRule(rule: Rule | null | undefined): boolean {
+  return rule?.active !== false;
 }
 
 export function buildWeekBuckets(
@@ -22,13 +24,10 @@ export function buildWeekBuckets(
   const dates = lastNDates(days, now);
   return dates.map((date) => {
     const dayRows = rows.filter((row) => row.date === date);
-    const totalSeconds = dayRows.reduce(
-      (sum, row) => sum + row.time_spent_seconds,
-      0,
-    );
+    const totalSeconds = dayRows.reduce((sum, row) => sum + row.time_spent_seconds, 0);
     const overLimitSeconds = dayRows.reduce((sum, row) => {
       const rule = findRuleForDomain(row.domain, rules);
-      if (!rule) return sum;
+      if (!rule || !isActiveRule(rule)) return sum;
       const over = row.time_spent_seconds - rule.time_limit_minutes * 60;
       return sum + Math.max(0, over);
     }, 0);
@@ -55,10 +54,11 @@ export function buildDomainUsage(
   return [...totals.entries()]
     .map(([domain, seconds]) => {
       const rule = findRuleForDomain(domain, rules);
+      const active = isActiveRule(rule);
       return {
         domain,
         seconds,
-        limitMinutes: rule?.time_limit_minutes ?? null,
+        limitMinutes: active ? rule?.time_limit_minutes ?? null : null,
         category: rule?.category ?? null,
       };
     })
