@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { isRuleEnforced } from "../../extension/lib.js";
+import { findRule, isRuleEnforced } from "../../extension/lib.js";
+
+describe("findRule", () => {
+  it("finds rules for exact domains and subdomains", () => {
+    const rules = [{ domain: "youtube.com" }, { domain: "x.com" }];
+
+    assert.equal(findRule("www.youtube.com", rules), rules[0]);
+    assert.equal(findRule("m.youtube.com", rules), rules[0]);
+    assert.equal(findRule("example.com", rules), null);
+  });
+});
 
 describe("isRuleEnforced", () => {
   it("treats inactive rules as unenforced", () => {

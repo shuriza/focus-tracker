@@ -1,4 +1,5 @@
 import {
+  buildHeartbeatRecord,
   findRule,
   formatDuration,
   isRuleActive,
@@ -6,6 +7,7 @@ import {
   isTrackableUrl,
   normalizeDomain,
   quoteForDomain,
+  sanitizeHeartbeatError,
   todayISO,
 } from "./lib.js";
 
@@ -182,35 +184,22 @@ async function supabaseHeaders(state) {
   };
 }
 
-function sanitizeHeartbeatError(value) {
-  if (!value) return null;
-  const text = String(value)
-    .replace(/(access_token|refresh_token)=([^&\s]+)/gi, "$1=[redacted]")
-    .replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer [redacted]")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!text) return null;
-  return text.slice(0, 160);
-}
-
-function buildHeartbeatRecord(state, { status = "connected", lastSyncAt = null, lastError = null } = {}) {
+function heartbeatRecord(state, { status = "connected", lastSyncAt = null, lastError = null } = {}) {
   const userId = state.session?.user?.id;
-  if (!userId) return null;
-  return {
-    user_id: userId,
-    state,
-    extension_version: EXTENSION_VERSION,
-    manifest_version: MANIFEST_VERSION,
-    last_seen_at: new Date().toISOString(),
-    ...(lastSyncAt ? { last_sync_at: lastSyncAt } : {}),
-    pending_sync_count: Object.keys(state.pendingSync).length,
-    last_error: sanitizeHeartbeatError(lastError),
-  };
+  return buildHeartbeatRecord({
+    userId,
+    status,
+    extensionVersion: EXTENSION_VERSION,
+    manifestVersion: MANIFEST_VERSION,
+    pendingSyncCount: Object.keys(state.pendingSync).length,
+    lastSyncAt,
+    lastError,
+  });
 }
 
 async function upsertExtensionStatus(state, options = {}) {
   const headers = await supabaseHeaders(state);
-  const payload = buildHeartbeatRecord(state, options);
+  const payload = heartbeatRecord(state, options);
   if (!headers || !payload) return false;
 
   const response = await fetch(state.supabaseUrl + "/rest/v1/extension_status?on_conflict=user_id", {

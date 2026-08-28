@@ -42,6 +42,52 @@ export function formatDuration(totalSeconds) {
   return `${rest}s`;
 }
 
+export function sanitizeHeartbeatError(value) {
+  if (!value) return null;
+  const text = String(value)
+    .replace(/(access_token|refresh_token)=([^&\s]+)/gi, "$1=[redacted]")
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer [redacted]")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return null;
+  return text.slice(0, 160);
+}
+
+/**
+ * @param {{
+ *   userId?: string | null,
+ *   status?: "connected" | "error",
+ *   extensionVersion?: string,
+ *   manifestVersion?: string,
+ *   pendingSyncCount?: number,
+ *   lastSyncAt?: string | null,
+ *   lastError?: string | null,
+ *   now?: Date,
+ * }} input
+ */
+export function buildHeartbeatRecord({
+  userId,
+  status = "connected",
+  extensionVersion = "unknown",
+  manifestVersion = "3",
+  pendingSyncCount = 0,
+  lastSyncAt = null,
+  lastError = null,
+  now = new Date(),
+}) {
+  if (!userId) return null;
+  return {
+    user_id: userId,
+    state: status,
+    extension_version: extensionVersion,
+    manifest_version: manifestVersion,
+    last_seen_at: now.toISOString(),
+    ...(lastSyncAt ? { last_sync_at: lastSyncAt } : {}),
+    pending_sync_count: pendingSyncCount,
+    last_error: sanitizeHeartbeatError(lastError),
+  };
+}
+
 export function quoteForDomain(domain, dateISO) {
   const seed = `${domain}:${dateISO}`;
   let hash = 0;
@@ -61,6 +107,10 @@ export const QUOTES = [
   "Kalau masih ingin membuka situs ini, tulis dulu apa yang harus selesai dulu.",
   "Perhatianmu mahal. Jangan habiskan untuk timeline yang tidak ingat namamu.",
 ];
+
+export function findRule(domain, rules) {
+  return (rules ?? []).find((rule) => domainMatches(domain, rule.domain)) ?? null;
+}
 
 export function isRuleActive(rule) {
   return Boolean(rule && rule.active !== false);
