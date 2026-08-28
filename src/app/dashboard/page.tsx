@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   Download,
   Flame,
@@ -20,13 +21,15 @@ import {
   buildTrend,
   buildWeekBuckets,
 } from "@/lib/analytics";
+import { refreshAuthSession } from "@/app/actions/auth";
 import { hasSupabaseConfig } from "@/lib/env";
 import { formatDuration, lastNDates, longDateLabel, todayISO } from "@/lib/time";
 import { formatHeartbeatAge, summarizeExtensionStatus } from "@/lib/extension-status";
+import { describeDashboardDataError } from "@/lib/supabase/dashboard-error";
 import { createClient } from "@/lib/supabase/server";
 import type { DailyAnalytic, ExtensionStatus, Rule } from "@/lib/types";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Minggu ini",
 };
 
@@ -55,13 +58,24 @@ export default async function DashboardPage() {
     supabase.from("extension_status").select("*").maybeSingle(),
   ]);
 
-  if (rulesResult.error || analyticsResult.error || statusResult.error) {
-    const message =
-      rulesResult.error?.message ?? analyticsResult.error?.message ?? statusResult.error?.message;
+  const failure = rulesResult.error ?? analyticsResult.error ?? statusResult.error;
+  if (failure) {
+    const errorView = describeDashboardDataError(failure.message, failure.code);
     return (
       <section className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 shadow-sm">
-        <p className="font-semibold text-rose-900">Gagal memuat data analitik</p>
-        <p className="mt-1">{message}. Pastikan <code>database/schema.sql</code> sudah dijalankan di proyek Supabase.</p>
+        <p className="font-semibold text-rose-900">{errorView.title}</p>
+        <p className="mt-1">{failure.message}</p>
+        <p className="mt-2">{errorView.guidance}</p>
+        {errorView.kind === "session" ? (
+          <form action={refreshAuthSession} className="mt-4">
+            <button
+              type="submit"
+              className="rounded-xl bg-rose-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-rose-800"
+            >
+              Perbarui sesi
+            </button>
+          </form>
+        ) : null}
       </section>
     );
   }

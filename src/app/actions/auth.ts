@@ -82,3 +82,17 @@ export async function signOut() {
   revalidatePath("/", "layout");
   redirect("/login");
 }
+
+export async function refreshAuthSession() {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.refreshSession();
+
+  if (error) {
+    await supabase.auth.signOut({ scope: "local" });
+    revalidatePath("/", "layout");
+    redirect("/login?next=/dashboard");
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
+}

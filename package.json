@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/lib/time.test.ts src/lib/analytics.test.ts src/lib/extension-status.test.ts src/lib/extension-heartbeat.test.ts src/lib/rule-enforcement.test.ts src/lib/supabase/proxy.test.ts"
+    "test": "tsx --test src/lib/time.test.ts src/lib/analytics.test.ts src/lib/extension-status.test.ts src/lib/extension-heartbeat.test.ts src/lib/rule-enforcement.test.ts src/lib/supabase/dashboard-error.test.ts src/lib/supabase/proxy.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
