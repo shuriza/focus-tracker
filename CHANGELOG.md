@@ -33,6 +33,9 @@ Semua perubahan penting pada Fokus Kerja dicatat di sini. Format mengikuti
   `src/lib/search-params.ts` yang juga menangani query key berulang.
 - Redirect setelah login menerima `//host`, yang diselesaikan browser sebagai URL
   lintas-origin. `safeNextPath` sekarang hanya meloloskan path same-origin.
+- `formatDuration` selalu menambahkan sisa detik pada durasi menit bulat,
+  sehingga UI menampilkan `25m 0s`. Kini sufiks detik hanya muncul bila bukan
+  nol (`25m`), diperbaiki di dashboard maupun `extension/lib.js`.
 
 ### Keamanan
 

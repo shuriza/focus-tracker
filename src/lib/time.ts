@@ -63,7 +63,7 @@ export function formatDuration(totalSeconds: number): string {
     return `${hours}j ${minutes}m`;
   }
   if (minutes > 0) {
-    return `${minutes}m ${rest}s`;
+    return rest > 0 ? `${minutes}m ${rest}s` : `${minutes}m`;
   }
   return `${rest}s`;
 }

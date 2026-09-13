@@ -132,7 +132,7 @@ describe("buildInsights", () => {
     assert.equal(top?.tone, "blue");
     assert.match(top?.title ?? "", /^youtube\.com/);
     assert.match(top?.detail ?? "", /67%/);
-    assert.match(top?.detail ?? "", /Hari ini sudah 30m 0s/);
+    assert.match(top?.detail ?? "", /Hari ini sudah 30m/);
   });
 
   it("does not claim a percentage when the previous period had no minutes", () => {

@@ -61,4 +61,10 @@ describe("formatDuration", () => {
     assert.equal(formatDuration(125), "2m 5s");
     assert.equal(formatDuration(3725), "1j 2m");
   });
+
+  it("omits a zero seconds remainder on whole minutes", () => {
+    assert.equal(formatDuration(1500), "25m");
+    assert.equal(formatDuration(60), "1m");
+    assert.equal(formatDuration(0), "0s");
+  });
 });
