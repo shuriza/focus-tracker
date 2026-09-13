@@ -1,4 +1,5 @@
 import {
+  buildBudgetSnapshot,
   buildHeartbeatRecord,
   findRule,
   formatDuration,
@@ -24,6 +25,7 @@ const defaultState = () => ({
   supabaseUrl: "",
   supabaseAnonKey: "",
   rules: [],
+  budgetMinutes: null,
   usage: {},
   pendingSync: {},
   lastTickAt: Date.now(),
@@ -277,6 +279,25 @@ async function pullRemote(state) {
     }
     state.rules = await rulesRes.json();
 
+    const budgetRes = await fetch(
+      state.supabaseUrl +
+        "/rest/v1/focus_settings?user_id=eq." +
+        userId +
+        "&select=daily_budget_minutes",
+      { headers },
+    );
+    if (budgetRes.status === 401 && (await refreshSession(state))) {
+      return pullRemote(state);
+    }
+    if (budgetRes.status === 401) {
+      return { ok: false, error: "Sesi kedaluwarsa. Sinkronisasi ulang diperlukan." };
+    }
+    if (!budgetRes.ok) {
+      return { ok: false, error: "Gagal memuat anggaran (" + budgetRes.status + ")." };
+    }
+    const budgetRows = await budgetRes.json();
+    state.budgetMinutes = budgetRows?.[0]?.daily_budget_minutes ?? null;
+
     const since = todayISO(new Date(Date.now() - 6 * 86400000));
     const usageRes = await fetch(
       state.supabaseUrl +
@@ -511,6 +532,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         dashboardUrl: state.dashboardUrl,
         pendingCount: Object.keys(state.pendingSync).length,
         rules: state.rules,
+        budget: buildBudgetSnapshot(state.usage, todayISO(), state.budgetMinutes),
       });
       return;
     }

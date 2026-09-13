@@ -12,6 +12,9 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { DomainBars } from "@/components/DomainBars";
+import { BudgetCard } from "@/components/BudgetCard";
+import { InsightList } from "@/components/InsightList";
+import { RangeTabs } from "@/components/RangeTabs";
 import { TodayProgress } from "@/components/TodayProgress";
 import { WeekChart } from "@/components/WeekChart";
 import {
@@ -22,12 +25,16 @@ import {
   buildWeekBuckets,
 } from "@/lib/analytics";
 import { refreshAuthSession } from "@/app/actions/auth";
+import { buildBudgetStatus } from "@/lib/budget";
+import { buildInsights } from "@/lib/insights";
 import { hasSupabaseConfig } from "@/lib/env";
+import { parseRangeDays, rangeCompareLabel, rangeLabel } from "@/lib/range";
+import type { SearchParamValue } from "@/lib/search-params";
 import { formatDuration, lastNDates, longDateLabel, todayISO } from "@/lib/time";
 import { formatHeartbeatAge, summarizeExtensionStatus } from "@/lib/extension-status";
 import { describeDashboardDataError } from "@/lib/supabase/dashboard-error";
 import { createClient } from "@/lib/supabase/server";
-import type { DailyAnalytic, ExtensionStatus, Rule } from "@/lib/types";
+import type { DailyAnalytic, ExtensionStatus, FocusSettings, Rule } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Minggu ini",
@@ -35,7 +42,11 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ rentang?: SearchParamValue }>;
+}) {
   if (!hasSupabaseConfig()) {
     return (
       <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-900">
@@ -44,11 +55,13 @@ export default async function DashboardPage() {
     );
   }
 
+  const params = (await searchParams) ?? {};
+  const rangeDays = parseRangeDays(params.rentang);
   const supabase = await createClient();
-  const since = lastNDates(14)[0];
+  const since = lastNDates(rangeDays * 2)[0];
   const today = todayISO();
 
-  const [rulesResult, analyticsResult, statusResult] = await Promise.all([
+  const [rulesResult, analyticsResult, statusResult, settingsResult] = await Promise.all([
     supabase.from("rules").select("*").order("domain"),
     supabase
       .from("daily_analytics")
@@ -56,9 +69,11 @@ export default async function DashboardPage() {
       .gte("date", since)
       .order("date", { ascending: true }),
     supabase.from("extension_status").select("*").maybeSingle(),
+    supabase.from("focus_settings").select("*").maybeSingle(),
   ]);
 
-  const failure = rulesResult.error ?? analyticsResult.error ?? statusResult.error;
+  const failure =
+    rulesResult.error ?? analyticsResult.error ?? statusResult.error ?? settingsResult.error;
   if (failure) {
     const errorView = describeDashboardDataError(failure.message, failure.code);
     return (
@@ -84,26 +99,37 @@ export default async function DashboardPage() {
   const activeRules = rules.filter((rule) => rule.active !== false);
   const rows = (analyticsResult.data ?? []) as DailyAnalytic[];
   const extensionStatus = (statusResult.data ?? null) as ExtensionStatus | null;
+  const focusSettings = (settingsResult.data ?? null) as FocusSettings | null;
   const statusView = summarizeExtensionStatus(extensionStatus, new Date());
   const hasUsage = rows.some((row) => row.time_spent_seconds > 0);
-  const allBuckets = buildWeekBuckets(rows, rules, new Date(), 14);
-  const week = allBuckets.slice(-7);
-  const domains = buildDomainUsage(rows, rules);
+  const allBuckets = buildWeekBuckets(rows, rules, new Date(), rangeDays * 2);
+  const previousBuckets = allBuckets.slice(0, rangeDays);
+  const week = allBuckets.slice(-rangeDays);
+  const rangeDates = new Set(week.map((day) => day.date));
+  const rangeRows = rows.filter((row) => rangeDates.has(row.date));
+  const domains = buildDomainUsage(rangeRows, rules);
   const todayDomains = buildTodayDomains(rows, rules, today);
 
   const todaySeconds = rows
     .filter((row) => row.date === today)
     .reduce((sum, row) => sum + row.time_spent_seconds, 0);
   const weekSeconds = week.reduce((sum, day) => sum + day.totalMinutes * 60, 0);
-  const prevWeekSeconds = allBuckets
-    .slice(0, 7)
-    .reduce((sum, day) => sum + day.totalMinutes * 60, 0);
+  const prevWeekSeconds = previousBuckets.reduce((sum, day) => sum + day.totalMinutes * 60, 0);
   const overMinutes = week.reduce((sum, day) => sum + day.overLimitMinutes, 0);
   const top = domains[0];
 
   const streak = buildStreak(allBuckets);
   const trend = buildTrend(allBuckets);
   const wow = weekOverWeek(weekSeconds, prevWeekSeconds);
+  const budget = buildBudgetStatus(rows, today, focusSettings?.daily_budget_minutes ?? null);
+  const insights = buildInsights({
+    buckets: week,
+    previousBuckets,
+    domains,
+    todayDomains,
+    budget,
+    rangeDays,
+  });
 
   return (
     <main className="space-y-8">
@@ -128,6 +154,13 @@ export default async function DashboardPage() {
           <Download className="h-3.5 w-3.5" />
           Unduh CSV
         </a>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <RangeTabs active={rangeDays} basePath="/dashboard" />
+        <p className="text-xs font-semibold text-slate-500">
+          Menampilkan {rangeLabel(rangeDays)} · {rangeCompareLabel(rangeDays)}
+        </p>
       </div>
 
       <section
@@ -211,6 +244,21 @@ export default async function DashboardPage() {
         </section>
       ) : null}
 
+      <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <BudgetCard status={budget} />
+        <article className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm">
+          <div className="border-b border-slate-100 pb-4">
+            <h2 className="text-base font-bold text-slate-900">Insight {rangeLabel(rangeDays)}</h2>
+            <p className="text-xs text-slate-500">
+              Sorotan otomatis dari anggaran, domain, tren, dan kepatuhan kuota
+            </p>
+          </div>
+          <div className="mt-5">
+            <InsightList insights={insights} />
+          </div>
+        </article>
+      </section>
+
       {/* KPI Cards Grid */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
@@ -233,9 +281,9 @@ export default async function DashboardPage() {
           icon={BarChart3}
           iconColor="text-indigo-600"
           iconBg="bg-indigo-50"
-          label="7 Hari Terakhir"
+          label={rangeLabel(rangeDays) + " Terakhir"}
           value={formatDuration(weekSeconds)}
-          hint={trendHint(wow, "vs minggu lalu")}
+          hint={trendHint(wow, rangeCompareLabel(rangeDays))}
         />
         <Kpi
           icon={ShieldAlert}
@@ -253,7 +301,9 @@ export default async function DashboardPage() {
           <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
               <h2 className="text-base font-bold text-slate-900">Durasi Harian</h2>
-              <p className="text-xs text-slate-500">Statistik pemakaian 7 hari terakhir</p>
+              <p className="text-xs text-slate-500">
+                Statistik pemakaian {rangeLabel(rangeDays)} terakhir
+              </p>
             </div>
             <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
               <span className="flex items-center gap-1.5">
@@ -359,7 +409,9 @@ function trendHint(
   trend: { value: number | null; direction: "up" | "down" },
   suffix: string,
 ): string {
-  if (trend.value === null) return `Belum ada pembanding ${suffix}`;
+  if (trend.value === null) {
+    return `Belum ada pembanding ${suffix.replace(/^vs\s+/, "")}`;
+  }
   const arrow = trend.direction === "up" ? "▲" : "▼";
   const sign = trend.value > 0 ? "+" : "";
   return `${arrow} ${sign}${trend.value}% ${suffix}`;

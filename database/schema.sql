@@ -28,6 +28,14 @@ CREATE TABLE IF NOT EXISTS public.extension_status (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS public.focus_settings (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+    daily_budget_minutes INTEGER NOT NULL CHECK (daily_budget_minutes BETWEEN 15 AND 1440),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS public.daily_analytics (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -40,11 +48,13 @@ CREATE TABLE IF NOT EXISTS public.daily_analytics (
 
 CREATE INDEX IF NOT EXISTS rules_user_id_idx ON public.rules (user_id);
 CREATE INDEX IF NOT EXISTS extension_status_user_id_idx ON public.extension_status (user_id);
+CREATE INDEX IF NOT EXISTS focus_settings_user_id_idx ON public.focus_settings (user_id);
 CREATE INDEX IF NOT EXISTS daily_analytics_user_date_idx ON public.daily_analytics (user_id, date DESC);
 CREATE INDEX IF NOT EXISTS daily_analytics_user_domain_idx ON public.daily_analytics (user_id, domain);
 
 ALTER TABLE public.rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.extension_status ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.focus_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.daily_analytics ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view their own rules" ON public.rules;
@@ -55,6 +65,10 @@ DROP POLICY IF EXISTS "Users can view their own extension status" ON public.exte
 DROP POLICY IF EXISTS "Users can insert their own extension status" ON public.extension_status;
 DROP POLICY IF EXISTS "Users can update their own extension status" ON public.extension_status;
 DROP POLICY IF EXISTS "Users can delete their own extension status" ON public.extension_status;
+DROP POLICY IF EXISTS "Users can view their own focus settings" ON public.focus_settings;
+DROP POLICY IF EXISTS "Users can insert their own focus settings" ON public.focus_settings;
+DROP POLICY IF EXISTS "Users can update their own focus settings" ON public.focus_settings;
+DROP POLICY IF EXISTS "Users can delete their own focus settings" ON public.focus_settings;
 DROP POLICY IF EXISTS "Users can view their own analytics" ON public.daily_analytics;
 DROP POLICY IF EXISTS "Users can insert/update their own analytics" ON public.daily_analytics;
 DROP POLICY IF EXISTS "Users can update their own analytics" ON public.daily_analytics;
@@ -91,6 +105,23 @@ CREATE POLICY "Users can update their own extension status"
 
 CREATE POLICY "Users can delete their own extension status"
     ON public.extension_status FOR DELETE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own focus settings"
+    ON public.focus_settings FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own focus settings"
+    ON public.focus_settings FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own focus settings"
+    ON public.focus_settings FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own focus settings"
+    ON public.focus_settings FOR DELETE
     USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can view their own analytics"
@@ -144,6 +175,7 @@ $$;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.rules TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.extension_status TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.focus_settings TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.daily_analytics TO authenticated;
 GRANT EXECUTE ON FUNCTION public.increment_daily_time(TEXT, INTEGER, DATE) TO authenticated;
 

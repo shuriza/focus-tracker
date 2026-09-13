@@ -1,8 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft, Clock, Download, FolderOpen, Info, Puzzle, RefreshCw } from "lucide-react";
+import {
+  EXTENSION_DOWNLOAD_PATH,
+  EXTENSION_PACKAGE_FILENAME,
+  EXTENSION_VERSION,
+} from "@/lib/release";
 
-const EXTENSION_DOWNLOAD = "/downloads/fokus-kerja-v1.2.0.zip";
+const EXTENSION_DOWNLOAD = EXTENSION_DOWNLOAD_PATH;
 
 export const metadata: Metadata = {
   title: "Pasang ekstensi",
@@ -50,9 +55,11 @@ export default function GuidePage() {
           className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.98]"
         >
           <Download className="h-4 w-4" />
-          Unduh Fokus Kerja v1.2.0
+          Unduh Fokus Kerja v{EXTENSION_VERSION}
         </a>
-        <p className="mt-2 text-xs font-medium text-slate-500">Paket ZIP · Chrome Manifest V3 · v1.2.0</p>
+        <p className="mt-2 text-xs font-medium text-slate-500">
+          Paket ZIP · Chrome Manifest V3 · v{EXTENSION_VERSION}
+        </p>
 
         <div className="mt-10 space-y-4">
           {/* Step 1 */}
@@ -68,7 +75,7 @@ export default function GuidePage() {
                 </h2>
                 <p className="text-sm text-slate-600 leading-relaxed">
                   Klik tombol unduh di atas dan simpan file{" "}
-                  <code className="rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-blue-700">fokus-kerja-v1.2.0.zip</code> di komputer.
+                  <code className="rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-blue-700">{EXTENSION_PACKAGE_FILENAME}</code> di komputer.
                 </p>
               </div>
             </div>

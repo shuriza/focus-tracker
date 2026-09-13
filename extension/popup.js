@@ -8,6 +8,31 @@ const statusEl = document.getElementById("status");
 const sessionBoxEl = sessionEl.closest(".session-box");
 const syncEl = document.getElementById("sync");
 const signoutEl = document.getElementById("signout");
+const budgetTotalEl = document.getElementById("budget-total");
+const budgetTrackEl = document.getElementById("budget-track");
+const budgetBarEl = document.getElementById("budget-bar");
+const budgetDetailEl = document.getElementById("budget-detail");
+
+function renderBudget(budget) {
+  if (!budget || budget.budgetMinutes == null) {
+    budgetTotalEl.textContent = "Anggaran belum diatur.";
+    budgetTrackEl.hidden = true;
+    budgetBarEl.style.width = "0%";
+    budgetBarEl.classList.remove("over");
+    budgetDetailEl.classList.remove("over");
+    budgetDetailEl.textContent = "Atur anggaran harian di dashboard Fokus Kerja.";
+    return;
+  }
+
+  budgetTotalEl.textContent = `${formatDuration(budget.usedSeconds)} / ${formatDuration(budget.budgetMinutes * 60)}`;
+  budgetTrackEl.hidden = false;
+  budgetBarEl.style.width = `${Math.round(budget.ratio * 100)}%`;
+  budgetBarEl.classList.toggle("over", budget.over);
+  budgetDetailEl.classList.toggle("over", budget.over);
+  budgetDetailEl.textContent = budget.over
+    ? `Lewat ${formatDuration(budget.usedSeconds - budget.budgetMinutes * 60)} dari anggaran.`
+    : `Sisa ${formatDuration(budget.remainingSeconds)} hari ini.`;
+}
 
 function render(status) {
   if (!status.domain) {
@@ -36,6 +61,7 @@ function render(status) {
   sessionBoxEl.classList.toggle("connected", status.signedIn);
   syncEl.textContent = status.signedIn ? "Perbarui Data" : "Masuk & Sinkronkan";
   signoutEl.hidden = !status.signedIn;
+  renderBudget(status.budget);
 }
 
 chrome.runtime.sendMessage({ type: "FOKUS_GET_STATUS" }, (status) => {

@@ -125,3 +125,40 @@ export function isRuleEnforced(rule, now = new Date()) {
   if (start < end) return hour >= start && hour < end;
   return hour >= start || hour < end;
 }
+
+/**
+ * Rekap anggaran fokus harian lintas domain.
+ *
+ * @param {Record<string, number>} usage peta `"YYYY-MM-DD:domain"` → detik
+ * @param {string} dateISO tanggal `YYYY-MM-DD`
+ * @param {number | null | undefined} budgetMinutes anggaran harian dalam menit
+ */
+export function buildBudgetSnapshot(usage, dateISO, budgetMinutes) {
+  const prefix = `${dateISO}:`;
+  let usedSeconds = 0;
+  for (const [key, seconds] of Object.entries(usage ?? {})) {
+    if (!key.startsWith(prefix)) continue;
+    const value = Number(seconds);
+    if (Number.isFinite(value) && value > 0) usedSeconds += Math.floor(value);
+  }
+
+  const minutes = Number(budgetMinutes);
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    return {
+      usedSeconds,
+      budgetMinutes: null,
+      remainingSeconds: 0,
+      ratio: 0,
+      over: false,
+    };
+  }
+
+  const budgetSeconds = minutes * 60;
+  return {
+    usedSeconds,
+    budgetMinutes: minutes,
+    remainingSeconds: Math.max(0, budgetSeconds - usedSeconds),
+    ratio: Math.min(1, usedSeconds / budgetSeconds),
+    over: usedSeconds > budgetSeconds,
+  };
+}

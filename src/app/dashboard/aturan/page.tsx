@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, Target } from "lucide-react";
+import { BudgetForm } from "@/components/BudgetForm";
 import { RuleForm } from "@/components/RuleForm";
 import { RuleList } from "@/components/RuleList";
 import { hasSupabaseConfig } from "@/lib/env";
 import { getRulePreset, RULE_PRESETS } from "@/lib/presets";
+import { findById, firstParam, type SearchParamValue } from "@/lib/search-params";
 import { createClient } from "@/lib/supabase/server";
-import type { Rule } from "@/lib/types";
+import type { FocusSettings, Rule } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Aturan",
@@ -17,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function RulesPage({
   searchParams,
 }: {
-  searchParams?: { edit?: string; preset?: string };
+  searchParams?: Promise<{ edit?: SearchParamValue; preset?: SearchParamValue }>;
 }) {
   if (!hasSupabaseConfig()) {
     return (
@@ -27,8 +29,13 @@ export default async function RulesPage({
     );
   }
 
+  const params = (await searchParams) ?? {};
   const supabase = await createClient();
-  const { data, error } = await supabase.from("rules").select("*").order("domain");
+  const [rulesResult, settingsResult] = await Promise.all([
+    supabase.from("rules").select("*").order("domain"),
+    supabase.from("focus_settings").select("*").maybeSingle(),
+  ]);
+  const error = rulesResult.error ?? settingsResult.error;
 
   if (error) {
     return (
@@ -39,11 +46,12 @@ export default async function RulesPage({
     );
   }
 
-  const rules = (data ?? []) as Rule[];
+  const rules = (rulesResult.data ?? []) as Rule[];
+  const focusSettings = (settingsResult.data ?? null) as FocusSettings | null;
   const activeRules = rules.filter((rule) => rule.active !== false);
   const inactiveCount = rules.length - activeRules.length;
-  const editRule = searchParams?.edit ? rules.find((rule) => rule.id === searchParams.edit) ?? null : null;
-  const preset = editRule ? null : getRulePreset(searchParams?.preset);
+  const editRule = findById(rules, params.edit);
+  const preset = editRule ? null : getRulePreset(firstParam(params.preset));
 
   return (
     <main className="space-y-8">
@@ -59,6 +67,26 @@ export default async function RulesPage({
           Batas dihitung per hari kalender perangkat. Subdomain secara otomatis mengikuti domain induk (contoh: <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-blue-700">m.youtube.com</code> memakai kuota <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-blue-700">youtube.com</code>).
         </p>
       </div>
+
+      <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm">
+        <div className="border-b border-slate-100 pb-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <Target className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Anggaran Fokus Harian</h2>
+              <p className="text-xs text-slate-500">
+                Batas total waktu browsing lintas-domain per hari. Anggaran hanya memberi sinyal di
+                dashboard — pemblokiran tetap mengikuti kuota per domain.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5">
+          <BudgetForm budgetMinutes={focusSettings?.daily_budget_minutes ?? null} />
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm">
         <div className="border-b border-slate-100 pb-4">

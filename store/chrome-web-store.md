@@ -1,6 +1,6 @@
 # Fokus Kerja — Chrome Web Store Readiness
 
-Versi rilis yang disiapkan: **1.2.0**
+Versi rilis yang disiapkan: **1.3.0**
 
 ## Metadata listing
 
@@ -11,7 +11,7 @@ Versi rilis yang disiapkan: **1.2.0**
 | Kategori | Productivity |
 | Situs web | https://focus-tracker-one-wheat.vercel.app |
 | Kebijakan privasi | https://focus-tracker-one-wheat.vercel.app/privacy |
-| Paket unduhan | https://focus-tracker-one-wheat.vercel.app/downloads/fokus-kerja-v1.2.0.zip |
+| Paket unduhan | https://focus-tracker-one-wheat.vercel.app/downloads/fokus-kerja-v1.3.0.zip |
 | Jenis ekstensi | Chrome Extension Manifest V3 |
 | Logo toko | `public/store/icon-128.png` |
 | Screenshot | `public/store/screenshot-home-1280x800.png`, `public/store/screenshot-popup-1280x800.png`, `public/store/screenshot-guide-1280x800.png`, `public/store/screenshot-privacy-1280x800.png` |
@@ -20,7 +20,7 @@ Versi rilis yang disiapkan: **1.2.0**
 
 ## Deskripsi singkat
 
-Pencatat durasi browsing dan pemblokir distraksi. Atur kuota harian, lihat ringkasan 7 hari, lalu kembali fokus.
+Pencatat durasi browsing dan pemblokir distraksi. Atur kuota harian dan anggaran fokus, lihat insight otomatis, lalu kembali fokus.
 
 ## Deskripsi panjang
 
@@ -30,9 +30,12 @@ Ekstensi ini:
 - mencatat durasi hanya saat tab aktif terlihat;
 - menerapkan kuota harian per domain;
 - memblokir situs saat batas tercapai dengan pengingat yang jelas;
+- menampilkan progres anggaran fokus harian lintas-domain di popup;
 - menyinkronkan aturan dan analitik ke dashboard Next.js;
 - menampilkan status koneksi ekstensi di dashboard agar kamu tahu kapan sinkron terakhir berhasil;
 - menyimpan state lokal secukupnya untuk antrian sinkron dan pemulihan sesi.
+
+Anggaran fokus harian bersifat informatif: ia menandai total waktu browsing harianmu, sedangkan pemblokiran situs tetap hanya dipicu kuota per domain.
 
 Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan token akses/refresh di heartbeat status.
 
@@ -43,6 +46,7 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 - Nama host/domain aktif: untuk mencocokkan aturan kuota.
 - Durasi pemakaian per domain per hari: untuk dashboard dan kuota.
 - Aturan kuota: domain, kategori, batas menit harian, dan jadwal aktif.
+- Anggaran fokus harian: satu angka batas menit per hari milik pengguna.
 - Status koneksi ekstensi: state, versi ekstensi, versi manifest, waktu heartbeat terakhir, waktu sinkron terakhir, jumlah antrean lokal, dan error yang sudah disanitasi.
 
 ### Data yang tidak dikumpulkan
@@ -54,6 +58,7 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 ### Cara data digunakan
 - Menjalankan timer dan pemblokiran situs.
 - Menampilkan grafik ringkasan di dashboard.
+- Menampilkan progres anggaran fokus harian di popup dan dashboard.
 - Menyinkronkan data antar perangkat milik pengguna yang sama.
 - Menunjukkan status koneksi ekstensi agar pengguna tahu apakah sinkron berhasil.
 
@@ -80,6 +85,7 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 - `npm run lint`
 - `npm run typecheck`
 - `npm run build`
+- `npm run package:extension` (paket ZIP deterministik; SHA-256 dicetak untuk verifikasi)
 
 ### Manual
 1. Muat folder `extension/` di Chrome dengan Developer mode.
@@ -87,12 +93,15 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 3. Uji sinkron sesi lewat popup ekstensi.
 4. Buka dashboard dan pastikan status koneksi menampilkan heartbeat terbaru.
 5. Pastikan situs yang melebihi kuota menampilkan overlay blokir.
-6. Unduh paket ZIP dan verifikasi nama file `fokus-kerja-v1.2.0.zip`.
+6. Atur anggaran fokus harian di `/dashboard/aturan`, lalu pastikan popup ekstensi dan dashboard menampilkan progres yang sama.
+7. Pastikan melampaui anggaran TIDAK memblokir situs; hanya kuota per domain yang memblokir.
+8. Unduh paket ZIP dan verifikasi nama file `fokus-kerja-v1.3.0.zip`.
 
 ## Review checklist
 
-- [ ] Versi manifest di `extension/manifest.json` sudah `1.2.0`.
-- [ ] Paket unduhan mengarah ke `/downloads/fokus-kerja-v1.2.0.zip`.
+- [ ] Versi manifest di `extension/manifest.json` sudah `1.3.0`.
+- [ ] Paket unduhan mengarah ke `/downloads/fokus-kerja-v1.3.0.zip`.
+- [ ] Migrasi `database/migrations/20260913_focus_budget.sql` sudah diterapkan sebelum deploy.
 - [ ] ZIP hanya berisi file runtime ekstensi yang diperlukan.
 - [ ] Tidak ada token, `.env`, repo metadata, atau file sumber yang ikut terpaket.
 - [ ] Logo toko berukuran 128x128 dan tetap terbaca di latar terang/gelap.

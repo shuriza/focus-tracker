@@ -24,6 +24,26 @@ export type ExtensionStatus = {
   updated_at: string;
 };
 
+export type FocusSettings = {
+  id: string;
+  user_id: string;
+  daily_budget_minutes: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BudgetStatus = {
+  budgetMinutes: number | null;
+  usedSeconds: number;
+  remainingSeconds: number;
+  ratio: number;
+  over: boolean;
+  overSeconds: number;
+  tone: "emerald" | "amber" | "rose" | "slate";
+  headline: string;
+  detail: string;
+};
+
 export type DailyAnalytic = {
   id: string;
   user_id: string;

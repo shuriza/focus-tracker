@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock, ArrowLeft, ShieldAlert } from "lucide-react";
 import { AuthForm } from "@/components/AuthForm";
+import { firstParam, safeNextPath, type SearchParamValue } from "@/lib/search-params";
 
 export const metadata = {
   title: "Masuk",
@@ -9,10 +10,11 @@ export const metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: SearchParamValue; error?: SearchParamValue }>;
 }) {
   const params = await searchParams;
-  const nextPath = params.next?.startsWith("/") ? params.next : "/dashboard";
+  const nextPath = safeNextPath(params.next);
+  const hasError = Boolean(firstParam(params.error));
 
   return (
     <div className="flex min-h-screen flex-col justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -49,7 +51,7 @@ export default async function LoginPage({
           Atur batasan kuota domain dan pantau kebiasaan fokusmu secara real-time.
         </p>
 
-        {params.error ? (
+        {hasError ? (
           <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
             <ShieldAlert className="h-4 w-4 shrink-0 text-rose-600" />
             <p>Gagal menukar kode masuk. Coba lagi dari formulir di bawah.</p>
