@@ -36,6 +36,11 @@ Semua perubahan penting pada Fokus Kerja dicatat di sini. Format mengikuti
 
 ### Keamanan
 
+- Next.js dinaikkan ke 16.3.5 dan `sharp` ke ≥0.35.4 untuk menutup advisory
+  upstream: RCE tanpa autentikasi pada server Windows (GHSA-p293-qw3h-jr36),
+  RCE pada Image Optimization API untuk berkas AVIF (GHSA-2xp9-vwfh-vxw4), dan
+  kerentanan libheif pada `sharp` (GHSA-rgj7-g3m4-5g8c). `npm audit --omit=dev`
+  kini melaporkan 0 kerentanan.
 - Anggaran fokus bersifat informatif; pemblokiran tetap hanya dipicu kuota
   per domain, sehingga tidak ada jalur pemblokiran baru yang bisa disalahgunakan.
 
