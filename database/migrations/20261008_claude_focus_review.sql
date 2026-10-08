@@ -1,4 +1,4 @@
--- Fokus Kerja v1.4.0: Claude Focus Review dengan persetujuan tindakan.
+-- Claude Focus Review dengan persetujuan tindakan.
 -- Jalankan migrasi ini terlebih dahulu, lalu deploy kode aplikasi.
 BEGIN;
 

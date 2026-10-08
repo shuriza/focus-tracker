@@ -194,7 +194,7 @@ ALTER TABLE IF EXISTS public.extension_status ADD COLUMN IF NOT EXISTS last_sync
 ALTER TABLE IF EXISTS public.extension_status ADD COLUMN IF NOT EXISTS pending_sync_count INTEGER DEFAULT 0;
 ALTER TABLE IF EXISTS public.extension_status ADD COLUMN IF NOT EXISTS last_error TEXT;
 
--- v1.4.0 migration for Claude Focus Review (idempotent)
+-- Claude Focus Review (idempotent)
 CREATE TABLE IF NOT EXISTS public.focus_reviews (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
