@@ -1,6 +1,6 @@
 # Fokus Kerja
 
-Pencatat durasi browsing + pemblokir distraksi. Ekstensi Chrome mencatat waktu di tab aktif, memblokir domain saat kuota harian habis, dan menyimpan jejak ke Supabase. Dashboard Next.js menampilkan tren pemakaian, anggaran fokus harian, dan insight otomatis.
+Pencatat durasi browsing, pemblokir distraksi, dan review fokus berbasis Claude. Ekstensi Chrome mencatat waktu di tab aktif dan memblokir domain saat kuota habis; dashboard Next.js menampilkan tren, anggaran fokus, insight deterministik, serta usulan perubahan yang selalu membutuhkan persetujuan pengguna.
 
 ## Stack
 
@@ -27,6 +27,12 @@ Satu batas lintas-domain untuk total waktu browsing per hari, terpisah dari kuot
 
 Dashboard meringkas rentang aktif menjadi maksimal empat insight berprioritas: status anggaran, domain dominan beserta porsinya, tren total dibanding periode sebelumnya, dan kepatuhan kuota. Semuanya dihitung dari data yang sama dengan grafik, tanpa panggilan jaringan tambahan.
 
+### Claude Focus Review
+
+Review fokus hanya berjalan setelah pengguna menyetujui pengiriman satu ringkasan. Server mengirim data agregat terbatas — domain teratas, durasi, kuota, dan tren — ke Claude melalui `ANTHROPIC_API_KEY`; isi halaman, URL lengkap, dan teks yang diketik tidak dikirim.
+
+Claude mengembalikan review terstruktur berisi pola dan maksimal tiga usulan. Usulan `set_domain_limit` atau `set_daily_budget` disimpan sebagai tindakan `pending`; perubahan baru diterapkan setelah pengguna menekan **Terapkan**. RPC Supabase menjalankan penerapan secara atomik dan mengaktifkan kembali aturan domain yang dipilih.
+
 ### Filter rentang 7/14/30 hari
 
 Rentang dipilih lewat query `?rentang=7|14|30` pada `/dashboard`; nilai lain jatuh ke 7 hari. Grafik, insight, dan pembanding periode sebelumnya semuanya mengikuti rentang aktif.
@@ -43,16 +49,17 @@ Ekstensi mengirim heartbeat ke `extension_status`: versi, waktu heartbeat terakh
 
 1. Buat proyek Supabase, lalu jalankan `database/schema.sql` di SQL editor.
 2. Salin `.env.example` ke `.env.local` dan isi URL + anon/publishable key.
-3. Install dan jalankan dashboard:
+3. Untuk mengaktifkan Claude Focus Review, isi `ANTHROPIC_API_KEY` di `.env.local`. `CLAUDE_MODEL` opsional; default-nya `claude-sonnet-5-5`. Jangan pernah memakai prefix `NEXT_PUBLIC_` untuk API key ini.
+4. Install dan jalankan dashboard:
 
 ```bash
 npm install
 npm run dev
 ```
 
-4. Untuk penggunaan lokal, buka `chrome://extensions` → Developer mode → Load unpacked → pilih folder `extension/`.
-5. Daftar/masuk di `http://localhost:3000/login`.
-6. Setelah login, ekstensi menyinkronkan sesi otomatis. Tombol **Masuk & Sinkronkan** di popup dapat dipakai untuk menghubungkan ulang akun.
+5. Untuk penggunaan lokal, buka `chrome://extensions` → Developer mode → Load unpacked → pilih folder `extension/`.
+6. Daftar/masuk di `http://localhost:3000/login`.
+7. Setelah login, ekstensi menyinkronkan sesi otomatis. Tombol **Masuk & Sinkronkan** di popup dapat dipakai untuk menghubungkan ulang akun.
 
 ## Paket ekstensi
 
@@ -72,11 +79,13 @@ Terapkan migrasi ke database tujuan **sebelum** men-deploy kode yang membacanya.
 | --- | --- |
 | `database/migrations/20260828_release_readiness.sql` | `rules.active`, tabel `extension_status` |
 | `database/migrations/20260913_focus_budget.sql` | tabel `focus_settings` (anggaran fokus harian) |
+| `database/migrations/20261008_claude_focus_review.sql` | tabel review, tindakan, RLS, dan RPC penerapan atomik |
 
 Verifikasi aman dilakukan lewat schema/query yang terautentikasi atau probe PostgREST yang sudah disanitasi:
 - endpoint baru tidak lagi mengembalikan `PGRST205` atau `42703`;
 - akses kontrol aturan yang sudah ada tetap bisa dijangkau;
 - hasil probe hanya memeriksa keberadaan kolom/tabel dan respons autentikasi, bukan nilai rahasia atau data produksi.
+- migrasi `20261008_claude_focus_review.sql` dan fungsi RPC `apply_focus_review_action` tersedia sebelum UI AI diaktifkan;
 
 ## Perintah
 
@@ -96,3 +105,7 @@ npm run package:extension
 - Ekstensi menyinkronkan sesi dengan menjalankan fetch same-origin di tab dashboard, lalu memakai token itu untuk PostgREST.
 - Next.js 16 memakai `src/proxy.ts` (middleware berganti nama menjadi proxy) dan mengirim `searchParams`/`params` sebagai Promise — keduanya wajib di-`await`.
 - Redirect setelah login disaring `safeNextPath`, sehingga hanya path same-origin yang diterima.
+- Claude dipanggil hanya dari Route Handler Node.js dengan API key server-side; client tidak pernah menerima kredensial.
+- `focus_reviews.input_snapshot` menyimpan ringkasan agregat untuk audit; `focus_review_actions` menyimpan status pending/applied/dismissed.
+- Model menghasilkan JSON terstruktur melalui SDK resmi; domain tindakan divalidasi ulang terhadap domain yang memang ada di snapshot.
+- RPC `apply_focus_review_action` menerapkan satu usulan dalam transaksi database dan tidak memberi Claude akses langsung untuk mengubah data.

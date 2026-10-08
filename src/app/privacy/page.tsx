@@ -59,6 +59,11 @@ export default function PrivacyPage() {
                 manifest, waktu heartbeat terakhir, waktu sinkron sukses terakhir, jumlah antrean
                 lokal yang belum terkirim, dan pesan error yang sudah dibatasi serta disanitasi.
               </li>
+              <li>
+                <strong>Ringkasan Focus Review</strong> — hanya dibuat setelah kamu menyetujui
+                pengiriman satu kali. Ringkasan berisi domain teratas, durasi, kuota, tren, dan
+                usulan tindakan; tidak berisi isi halaman atau URL lengkap.
+              </li>
             </ul>
           </Section>
 
@@ -80,31 +85,38 @@ export default function PrivacyPage() {
               <li>Menerapkan kuota harian dan memblokir situs saat batas habis.</li>
               <li>Sinkronisasi aturan antar perangkat yang memakai akun yang sama.</li>
               <li>Menunjukkan kesehatan koneksi dan sinkron ekstensi di dashboard.</li>
+              <li>
+                Mengirim ringkasan agregat ke Anthropic hanya saat kamu menyetujui Focus Review,
+                untuk menghasilkan pola dan usulan tindakan.
+              </li>
             </ul>
           </Section>
 
           <Section title="Penyimpanan & keamanan">
             <p>
               Data disimpan di Postgres lewat Supabase dengan <em>Row Level Security</em>: setiap
-              pengguna hanya dapat mengakses baris miliknya sendiri. Status heartbeat hanya memuat
-              data status koneksi dan sinkron, tanpa menyimpan access token atau refresh token.
-              Status sementara juga disimpan secara lokal di <code>chrome.storage.local</code> pada
-              browsermu.
+              pengguna hanya dapat mengakses baris miliknya sendiri. Review tersimpan di tabel
+              terpisah bersama snapshot agregat dan status tindakan. Status heartbeat tetap tidak
+              menyimpan access token atau refresh token. Status sementara disimpan secara lokal di
+              <code>chrome.storage.local</code> pada browsermu.
             </p>
           </Section>
 
           <Section title="Berbagi data">
             <p>
-              Kami tidak menjual, menyewakan, atau membagikan data pribadimu kepada pihak ketiga.
-              Data tidak digunakan untuk iklan atau pelacakan lintas situs.
+              Kami tidak menjual atau menyewakan data pribadimu. Saat kamu memilih Focus Review,
+              ringkasan agregat dikirim ke Anthropic untuk diproses oleh Claude. Pengiriman ini
+              tidak mencakup isi halaman, URL lengkap, permintaan pencarian, atau teks yang kamu
+              ketik, dan tidak digunakan oleh Fokus Kerja untuk iklan atau pelacakan lintas situs.
             </p>
           </Section>
 
           <Section title="Hakmu">
             <p>
               Kamu dapat meninjau, memperbarui, dan menonaktifkan aturan dari dashboard kapan saja.
-              Jika kamu memilih menghapus akun melalui penyedia autentikasi (Supabase), data yang
-              terkait akun akan mengikuti proses penghapusan di layanan tersebut.
+              Tindakan review dapat diabaikan sebelum diterapkan. Jika kamu memilih menghapus akun
+              melalui penyedia autentikasi (Supabase), data review dan tindakan yang terkait akun
+              akan mengikuti proses penghapusan di layanan tersebut.
             </p>
           </Section>
 
@@ -116,7 +128,7 @@ export default function PrivacyPage() {
           </Section>
 
           <p className="text-xs text-slate-400">
-            Terakhir diperbarui: 28 Agustus 2026.
+            Terakhir diperbarui: 8 Oktober 2026.
           </p>
         </div>
       </main>

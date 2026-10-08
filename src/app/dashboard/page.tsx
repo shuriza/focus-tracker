@@ -14,6 +14,7 @@ import {
 import { DomainBars } from "@/components/DomainBars";
 import { BudgetCard } from "@/components/BudgetCard";
 import { InsightList } from "@/components/InsightList";
+import { FocusReviewPanel } from "@/components/FocusReviewPanel";
 import { RangeTabs } from "@/components/RangeTabs";
 import { TodayProgress } from "@/components/TodayProgress";
 import { WeekChart } from "@/components/WeekChart";
@@ -258,6 +259,8 @@ export default async function DashboardPage({
           </div>
         </article>
       </section>
+
+      <FocusReviewPanel key={rangeDays} rangeDays={rangeDays} />
 
       {/* KPI Cards Grid */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

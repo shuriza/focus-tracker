@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s · Fokus Kerja",
   },
   description:
-    "Pencatat durasi browsing dan pemblokir distraksi. Atur kuota harian, lihat kebiasaan seminggu, lalu kembali ke kerja.",
+    "Pencatat durasi browsing, proteksi kuota, dan review fokus berbasis Claude dengan persetujuan pengguna.",
 };
 
 export default function RootLayout({

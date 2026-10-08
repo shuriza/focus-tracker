@@ -4,6 +4,23 @@ Semua perubahan penting pada Fokus Kerja dicatat di sini. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/), versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [Unreleased]
+
+### Ditambahkan
+
+- **Claude Focus Review**: review opt-in berbasis ringkasan aktivitas agregat untuk rentang
+  7/14/30 hari. Hasil terstruktur memuat pola dan usulan perubahan kuota.
+- **Persetujuan tindakan**: usulan domain atau anggaran disimpan sebagai `pending` dan baru
+  diterapkan setelah pengguna memilih **Terapkan**. Penerapan memakai RPC Supabase atomik.
+- Migrasi `database/migrations/20261008_claude_focus_review.sql` dengan RLS, pencatatan
+  penggunaan token, dan status tindakan.
+
+### Keamanan
+
+- API key Claude hanya dibaca di Route Handler Node.js; tidak pernah diekspos ke client.
+- Snapshot yang dikirim ke Claude hanya berisi domain teratas, durasi, kuota, dan tren. Isi
+  halaman, URL lengkap, dan teks yang diketik tidak dikirim.
+
 ## [1.3.0] — 2026-09-13
 
 ### Ditambahkan

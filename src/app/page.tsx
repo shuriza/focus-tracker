@@ -50,7 +50,7 @@ export default function Home() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600"></span>
               </span>
-              Pencatat waktu · Pemblokir distraksi cerdas
+              Pencatat waktu · Proteksi kuota · Review AI opsional
             </div>
 
             <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl lg:leading-[1.15]">
@@ -61,8 +61,9 @@ export default function Home() {
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-              Ekstensi otomatis mencatat durasi di tab aktif YouTube, X, atau portal media.
-              Begitu kuota habis, layar diproteksi dengan pengingat ramah — bukan gamifikasi rumit.
+              Ekstensi mencatat durasi pada tab aktif dan melindungi situs yang melewati kuota.
+              Saat kamu menyetujuinya, Claude membaca ringkasan agregat untuk menjelaskan pola
+              distraksi — tanpa mengirim isi halaman atau URL lengkap.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3.5">
@@ -93,7 +94,7 @@ export default function Home() {
             <div className="mt-8 flex items-center gap-4 text-xs font-medium text-slate-500">
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                100% data pribadi di tanganmu
+                <span className="font-semibold">Ringkasan dikirim hanya saat kamu setujui</span>
               </div>
               <div className="h-3 w-px bg-slate-200" />
               <div>Sinkron instan dengan Supabase</div>
@@ -183,7 +184,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 icon: Clock,
@@ -197,8 +198,13 @@ export default function Home() {
               },
               {
                 icon: BarChart3,
-                title: "Analisis Tren 7 Hari",
-                body: "Pantau kebiasaan mingguan dengan grafik jernih. Ketahui domain yang paling banyak memakan waktu dan perbaiki ritmemu.",
+                title: "Analisis Tren 7/14/30 Hari",
+                body: "Pantau kebiasaan dalam rentang yang kamu pilih. Lihat domain dominan, perubahan ritme, dan kepatuhan kuota.",
+              },
+              {
+                icon: Sparkles,
+                title: "Review Fokus dengan Claude",
+                body: "Dapatkan ringkasan pola dan usulan kuota berbasis data agregat. Tidak ada perubahan yang diterapkan tanpa persetujuanmu.",
               },
             ].map((item) => (
               <article

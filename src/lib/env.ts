@@ -31,3 +31,19 @@ export function getSupabaseAnonKey(): string {
 export function getAppUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 }
+
+export function hasClaudeConfig(): boolean {
+  return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+}
+
+export function getClaudeApiKey(): string {
+  const key = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!key) {
+    throw new Error("ANTHROPIC_API_KEY is not set");
+  }
+  return key;
+}
+
+export function getClaudeModel(): string {
+  return process.env.CLAUDE_MODEL?.trim() || "claude-sonnet-5-5";
+}
