@@ -47,7 +47,7 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 - Durasi pemakaian per domain per hari: untuk dashboard dan kuota.
 - Aturan kuota: domain, kategori, batas menit harian, dan jadwal aktif.
 - Anggaran fokus harian: satu angka batas menit per hari milik pengguna.
-- Status koneksi ekstensi: state, versi ekstensi, versi manifest, waktu heartbeat terakhir, waktu sinkron terakhir, jumlah antrean lokal, dan error yang sudah disanitasi.
+- Ringkasan aktivitas agregat: hanya saat pengguna menyetujui Focus Review, dikirim ke Anthropic (Claude) untuk menghasilkan ringkasan pola dan usulan kuota. Tidak berisi isi halaman, URL lengkap, atau teks yang diketik.
 
 ### Data yang tidak dikumpulkan
 - Konten halaman penuh.
@@ -60,12 +60,17 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 - Menampilkan grafik ringkasan di dashboard.
 - Menampilkan progres anggaran fokus harian di popup dan dashboard.
 - Menyinkronkan data antar perangkat milik pengguna yang sama.
+- Menghasilkan ringkasan pola dan usulan kuota lewat Anthropic (Claude), hanya setelah pengguna menyetujui pengiriman ringkasan agregat.
 - Menunjukkan status koneksi ekstensi agar pengguna tahu apakah sinkron berhasil.
 
 ### Penyimpanan & keamanan
 - Data server disimpan di Supabase/Postgres dengan Row Level Security.
 - Data lokal dipakai untuk antrian sinkron dan state sesi sementara.
 - Error heartbeat dibatasi dan disanitasi sebelum disimpan.
+
+### Pihak ketiga
+- **Anthropic (Claude)**: menerima ringkasan agregat hanya saat pengguna menyetujui Focus Review satu per satu. Pengiriman tidak otomatis dan dapat diabaikan kapan saja. Usulan perubahan tidak pernah diterapkan tanpa tombol persetujuan di dashboard.
+- **Supabase**: penyedia database dan autentikasi.
 
 ## Justifikasi permission
 
@@ -102,6 +107,7 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 - [ ] Versi manifest di `extension/manifest.json` sudah `1.3.0`.
 - [ ] Paket unduhan mengarah ke `/downloads/fokus-kerja-v1.3.0.zip`.
 - [ ] Migrasi `database/migrations/20260913_focus_budget.sql` sudah diterapkan sebelum deploy.
+- [ ] Migrasi `database/migrations/20261008_claude_focus_review.sql` sudah diterapkan sebelum UI review AI diaktifkan.
 - [ ] ZIP hanya berisi file runtime ekstensi yang diperlukan.
 - [ ] Tidak ada token, `.env`, repo metadata, atau file sumber yang ikut terpaket.
 - [ ] Logo toko berukuran 128x128 dan tetap terbaca di latar terang/gelap.
@@ -112,3 +118,4 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 - [ ] Teks listing menjelaskan data yang dikumpulkan secara jujur.
 - [ ] Teks listing tidak mengklaim fitur yang belum ada.
 - [ ] Semua verifikasi otomatis lulus sebelum pengajuan.
+- [ ] `ANTHROPIC_API_KEY` terisi di environment deployment bila fitur review AI diiklankan di listing.
