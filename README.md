@@ -48,7 +48,7 @@ Ekstensi mengirim heartbeat ke `extension_status`: versi, waktu heartbeat terakh
 ## Setup
 
 1. Buat proyek Supabase, lalu jalankan `database/schema.sql` di SQL editor.
-2. Salin `.env.example` ke `.env.local` dan isi URL + anon/publishable key.
+2. Salin `.env.example` ke `.env.local` dan isi URL + anon/publishable key. `DATABASE_URL` hanya diperlukan kalau Anda menjalankan migrasi lewat `npm run db:push`.
 3. Untuk mengaktifkan Claude Focus Review, isi `ANTHROPIC_API_KEY` di `.env.local`. `CLAUDE_MODEL` opsional; default-nya `claude-sonnet-5-5`. Jangan pernah memakai prefix `NEXT_PUBLIC_` untuk API key ini.
 4. Install dan jalankan dashboard:
 
@@ -75,6 +75,25 @@ Script menulis `public/downloads/fokus-kerja-v<versi-manifest>.zip` secara deter
 
 Terapkan migrasi ke database tujuan **sebelum** men-deploy kode yang membacanya. Urutan yang dipakai: migrasi dulu, baru deploy.
 
+Migrasi dijalankan dari terminal, tanpa membuka SQL Editor:
+
+```bash
+npm run db:status          # lihat migrasi mana yang sudah/belum diterapkan
+npm run db:push            # pratinjau (dry-run), tidak mengubah apa pun
+npm run db:push -- --apply # terapkan yang masih menunggu
+```
+
+Script membaca `DATABASE_URL` dari `.env.local`. Ambil dari Supabase Dashboard → **Project Settings → Database → Connection string → Session pooler (URI)**; pakai port `5432`, bukan Transaction pooler `6543`, karena DDL butuh sesi tetap.
+
+Setelah diterapkan, script mencatat setiap versi di tabel `public.schema_migrations`, jadi file yang sama tidak dijalankan dua kali. Semua file migrasi bersifat idempoten, sehingga jalur pemulihan aman: kalau pencatatan versi gagal setelah SQL sukses, jalankan `npm run db:push -- --apply` lagi.
+
+<details>
+<summary>Cara lama: tempel manual di SQL Editor</summary>
+
+Buka Supabase Dashboard → SQL Editor, tempel isi file dari tabel di bawah, jalankan berurutan.
+
+</details>
+
 | Migrasi | Dibutuhkan oleh |
 | --- | --- |
 | `database/migrations/20260828_release_readiness.sql` | `rules.active`, tabel `extension_status` |
@@ -96,6 +115,8 @@ npm run typecheck
 npm run lint
 npm run build
 npm run package:extension
+npm run db:status
+npm run db:push
 ```
 
 ## Catatan arsitektur
