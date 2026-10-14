@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 
@@ -14,7 +14,7 @@ const ADVISORY_LOCK_KEY = 727123456;
 // Migration files are executed as-is, so they must be re-runnable: every one uses
 // CREATE TABLE/INDEX IF NOT EXISTS, DROP POLICY IF EXISTS, CREATE OR REPLACE FUNCTION.
 // That property is what makes a partially recorded run recoverable.
-function readEnvFile(path) {
+export function readEnvFile(path) {
   let text;
   try {
     text = readFileSync(path, "utf8");
@@ -47,19 +47,19 @@ function readEnvFile(path) {
 readEnvFile(join(root, ".env.local"));
 readEnvFile(join(root, ".env"));
 
-function discoverMigrations() {
+export function discoverMigrations(dir = migrationsDir) {
   let entries;
   try {
-    entries = readdirSync(migrationsDir);
+    entries = readdirSync(dir);
   } catch {
-    throw new Error(`Folder migrasi tidak ditemukan: ${migrationsDir}`);
+    throw new Error(`Folder migrasi tidak ditemukan: ${dir}`);
   }
 
   return entries
     .filter((name) => name.endsWith(".sql"))
     .sort()
     .map((name) => {
-      const fullPath = join(migrationsDir, name);
+      const fullPath = join(dir, name);
       return {
         version: name.replace(/\.sql$/, ""),
         name,
@@ -169,7 +169,11 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(`\nGagal: ${error.message}`);
-  process.exitCode = 1;
-});
+// Only run when invoked directly; importing the helpers from a test must not
+// try to connect to a database.
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main().catch((error) => {
+    console.error(`\nGagal: ${error.message}`);
+    process.exitCode = 1;
+  });
+}
