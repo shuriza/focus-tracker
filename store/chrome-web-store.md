@@ -1,6 +1,6 @@
 # Fokus Kerja — Chrome Web Store Readiness
 
-Versi rilis yang disiapkan: **1.3.0**
+Versi rilis yang disiapkan: **1.4.0**
 
 ## Metadata listing
 
@@ -11,7 +11,7 @@ Versi rilis yang disiapkan: **1.3.0**
 | Kategori | Productivity |
 | Situs web | https://focus-tracker-one-wheat.vercel.app |
 | Kebijakan privasi | https://focus-tracker-one-wheat.vercel.app/privacy |
-| Paket unduhan | https://focus-tracker-one-wheat.vercel.app/downloads/fokus-kerja-v1.3.0.zip |
+| Paket unduhan | https://focus-tracker-one-wheat.vercel.app/downloads/fokus-kerja-v1.4.0.zip |
 | Jenis ekstensi | Chrome Extension Manifest V3 |
 | Logo toko | `public/store/icon-128.png` |
 | Screenshot | `public/store/screenshot-home-1280x800.png`, `public/store/screenshot-popup-1280x800.png`, `public/store/screenshot-guide-1280x800.png`, `public/store/screenshot-privacy-1280x800.png` |
@@ -100,22 +100,22 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 5. Pastikan situs yang melebihi kuota menampilkan overlay blokir.
 6. Atur anggaran fokus harian di `/dashboard/aturan`, lalu pastikan popup ekstensi dan dashboard menampilkan progres yang sama.
 7. Pastikan melampaui anggaran TIDAK memblokir situs; hanya kuota per domain yang memblokir.
-8. Unduh paket ZIP dan verifikasi nama file `fokus-kerja-v1.3.0.zip`.
+8. Unduh paket ZIP dan verifikasi nama file `fokus-kerja-v1.4.0.zip`.
 
 ## Review checklist
 
-- [ ] Versi manifest di `extension/manifest.json` sudah `1.3.0`.
-- [ ] Paket unduhan mengarah ke `/downloads/fokus-kerja-v1.3.0.zip`.
+- [x] Versi manifest di `extension/manifest.json` sudah `1.4.0`.
+- [x] Paket unduhan mengarah ke `/downloads/fokus-kerja-v1.4.0.zip`.
 - [ ] Migrasi `database/migrations/20260913_focus_budget.sql` sudah diterapkan sebelum deploy.
 - [ ] Migrasi `database/migrations/20261008_claude_focus_review.sql` sudah diterapkan sebelum UI review AI diaktifkan.
-- [ ] ZIP hanya berisi file runtime ekstensi yang diperlukan.
-- [ ] Tidak ada token, `.env`, repo metadata, atau file sumber yang ikut terpaket.
-- [ ] Logo toko berukuran 128x128 dan tetap terbaca di latar terang/gelap.
-- [ ] Screenshot berukuran 1280x800 atau 640x400 dan menampilkan pengalaman asli.
-- [ ] Promo kecil 440x280 tersedia.
-- [ ] Marquee 1400x560 tersedia bila ingin fitur promosi ekstra.
-- [ ] Kebijakan privasi publik dapat diakses di `/privacy`.
-- [ ] Teks listing menjelaskan data yang dikumpulkan secara jujur.
-- [ ] Teks listing tidak mengklaim fitur yang belum ada.
-- [ ] Semua verifikasi otomatis lulus sebelum pengajuan.
+- [x] ZIP hanya berisi file runtime ekstensi yang diperlukan.
+- [x] Tidak ada token, `.env`, repo metadata, atau file sumber yang ikut terpaket.
+- [x] Logo toko berukuran 128x128 dan tetap terbaca di latar terang/gelap.
+- [x] Screenshot berukuran 1280x800 atau 640x400 dan menampilkan pengalaman asli.
+- [x] Promo kecil 440x280 tersedia.
+- [x] Marquee 1400x560 tersedia bila ingin fitur promosi ekstra.
+- [x] Kebijakan privasi publik dapat diakses di `/privacy`.
+- [x] Teks listing menjelaskan data yang dikumpulkan secara jujur.
+- [x] Teks listing tidak mengklaim fitur yang belum ada.
+- [x] Semua verifikasi otomatis lulus sebelum pengajuan.
 - [ ] `ANTHROPIC_API_KEY` terisi di environment deployment bila fitur review AI diiklankan di listing.

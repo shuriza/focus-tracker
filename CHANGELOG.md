@@ -4,7 +4,7 @@ Semua perubahan penting pada Fokus Kerja dicatat di sini. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/), versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
-## [Unreleased]
+## [1.4.0] — 2026-10-16
 
 ### Ditambahkan
 
@@ -14,12 +14,22 @@ Semua perubahan penting pada Fokus Kerja dicatat di sini. Format mengikuti
   diterapkan setelah pengguna memilih **Terapkan**. Penerapan memakai RPC Supabase atomik.
 - Migrasi `database/migrations/20261008_claude_focus_review.sql` dengan RLS, pencatatan
   penggunaan token, dan status tindakan.
+- `npm run db:status` dan `npm run db:push -- --apply`: migrasi database dari terminal,
+  dengan pencatatan versi di `public.schema_migrations` dan advisory lock.
 
 ### Keamanan
 
 - API key Claude hanya dibaca di Route Handler Node.js; tidak pernah diekspos ke client.
 - Snapshot yang dikirim ke Claude hanya berisi domain teratas, durasi, kuota, dan tren. Isi
   halaman, URL lengkap, dan teks yang diketik tidak dikirim.
+- Next.js dinaikkan ke 16.4.2 dan `source-map-js` dipatok ke ≥1.2.2 lewat `overrides`
+  untuk menutup advisory upstream: RCE pada `next/og` ImageResponse
+  (GHSA-vcvr-r3jv-pc5j), kebocoran konten Draft Mode lewat `use cache`
+  (GHSA-3w37-wq28-93x7), cache poisoning SSG/ISR (GHSA-4jqv-mc3x-m676,
+  GHSA-mcj8-r9mp-w47p), SSRF pada Image Optimization (GHSA-cjq9-62q9-8jv4),
+  kerentanan librsvg pada `sharp` (GHSA-wq5f-xc86-pv6w), dan DoS event-loop
+  `source-map-js` (GHSA-68fv-2mgg-jv7q). `npm audit --omit=dev` kini melaporkan
+  0 kerentanan.
 
 ## [1.3.0] — 2026-09-13
 
