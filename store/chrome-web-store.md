@@ -104,18 +104,23 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 
 ## Review checklist
 
+Centang hanya membuktikan bagian yang disebutkan. Dimensi aset tidak membuktikan keterbacaan atau kesesuaian screenshot; build lokal tidak membuktikan akses publik atau kesiapan fitur di produksi. Verifikasi ulang gate produksi sebelum pengajuan.
+
 - [x] Versi manifest di `extension/manifest.json` sudah `1.4.0`.
-- [x] Paket unduhan mengarah ke `/downloads/fokus-kerja-v1.4.0.zip`.
+- [x] Konfigurasi unduhan di repo mengarah ke `/downloads/fokus-kerja-v1.4.0.zip`.
+- [ ] ZIP v1.4.0 dapat diunduh dari deployment tujuan dan cocok dengan paket lokal.
 - [ ] Migrasi `database/migrations/20260913_focus_budget.sql` sudah diterapkan sebelum deploy.
 - [ ] Migrasi `database/migrations/20261008_claude_focus_review.sql` sudah diterapkan sebelum UI review AI diaktifkan.
 - [x] ZIP hanya berisi file runtime ekstensi yang diperlukan.
-- [x] Tidak ada token, `.env`, repo metadata, atau file sumber yang ikut terpaket.
-- [x] Logo toko berukuran 128x128 dan tetap terbaca di latar terang/gelap.
-- [x] Screenshot berukuran 1280x800 atau 640x400 dan menampilkan pengalaman asli.
+- [ ] Isi ZIP sudah diperiksa bebas kredensial privat; pemeriksaan nama file saja tidak cukup.
+- [x] Dimensi logo toko 128x128.
+- [ ] Logo tetap terbaca di latar terang dan gelap melalui pemeriksaan visual.
+- [x] Dimensi empat screenshot 1280x800.
+- [ ] Screenshot diverifikasi secara visual sesuai pengalaman rilis yang akan diajukan.
 - [x] Promo kecil 440x280 tersedia.
 - [x] Marquee 1400x560 tersedia bila ingin fitur promosi ekstra.
-- [x] Kebijakan privasi publik dapat diakses di `/privacy`.
+- [ ] Kebijakan privasi publik dapat diakses di `/privacy` pada deployment tujuan.
 - [x] Teks listing menjelaskan data yang dikumpulkan secara jujur.
-- [x] Teks listing tidak mengklaim fitur yang belum ada.
-- [x] Semua verifikasi otomatis lulus sebelum pengajuan.
+- [ ] Fitur yang disebut di listing telah diverifikasi pada environment rilis, bukan hanya tersedia dalam kode.
+- [ ] Semua verifikasi otomatis dijalankan kembali dan lulus sebelum pengajuan.
 - [ ] `ANTHROPIC_API_KEY` terisi di environment deployment bila fitur review AI diiklankan di listing.

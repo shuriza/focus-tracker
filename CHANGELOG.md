@@ -4,6 +4,23 @@ Semua perubahan penting pada Fokus Kerja dicatat di sini. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/), versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [Unreleased]
+
+### Diperbaiki
+
+- README menjelaskan versi 1.4.0, konfigurasi lingkungan, setup dashboard/ekstensi,
+  dan verifikasi rilis tanpa menganggap ketersediaan kode sebagai bukti produksi.
+- Panduan migrasi mengoreksi `db:push` yang langsung menerapkan migrasi, bukan dry-run;
+  `db:status` dapat membuat tabel pelacakan, sedangkan `--list` tidak mengakses database.
+- Metadata versi root lockfile disamakan dengan `package.json` dan manifest 1.4.0.
+- Checklist toko memisahkan bukti dimensi/konfigurasi lokal dari pemeriksaan visual,
+  kredensial, unduhan publik, dan kesiapan fitur di environment rilis.
+
+### Keamanan
+
+- Zod dinaikkan ke 4.6.6 untuk menutup potensi kehabisan memori saat memvalidasi
+  koleksi besar ([GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)).
+
 ## [1.4.0] — 2026-10-16
 
 ### Ditambahkan
