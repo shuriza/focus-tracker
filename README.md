@@ -1,6 +1,6 @@
 # Fokus Kerja
 
-Pencatat durasi browsing, pemblokir distraksi, dan review fokus berbasis Claude. Ekstensi Chrome mencatat waktu di tab aktif dan memblokir domain saat kuota habis; dashboard Next.js menampilkan tren, anggaran fokus, insight deterministik, serta usulan perubahan yang selalu membutuhkan persetujuan pengguna.
+Pencatat durasi browsing, pemblokir distraksi, dan review fokus opsional berbasis Claude (membutuhkan `ANTHROPIC_API_KEY`). Ekstensi Chrome mencatat waktu di tab aktif dan memblokir domain saat kuota habis; dashboard Next.js menampilkan tren, anggaran fokus, insight deterministik, serta usulan perubahan yang selalu membutuhkan persetujuan pengguna.
 
 Versi repo dan ekstensi: **1.4.0**. Lihat [changelog](CHANGELOG.md) dan [paket ekstensi](public/downloads/fokus-kerja-v1.4.0.zip).
 

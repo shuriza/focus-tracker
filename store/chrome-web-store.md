@@ -47,7 +47,7 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 - Durasi pemakaian per domain per hari: untuk dashboard dan kuota.
 - Aturan kuota: domain, kategori, batas menit harian, dan jadwal aktif.
 - Anggaran fokus harian: satu angka batas menit per hari milik pengguna.
-- Ringkasan aktivitas agregat: hanya saat pengguna menyetujui Focus Review, dikirim ke Anthropic (Claude) untuk menghasilkan ringkasan pola dan usulan kuota. Tidak berisi isi halaman, URL lengkap, atau teks yang diketik.
+- (Opsional) Ringkasan aktivitas agregat: hanya jika server dikonfigurasi dengan `ANTHROPIC_API_KEY` dan pengguna menyetujui Focus Review satu kali. Ringkasan berisi domain teratas, durasi, kuota, dan tren; tidak berisi isi halaman, URL lengkap, atau teks yang diketik.
 
 ### Data yang tidak dikumpulkan
 - Konten halaman penuh.
@@ -60,7 +60,7 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 - Menampilkan grafik ringkasan di dashboard.
 - Menampilkan progres anggaran fokus harian di popup dan dashboard.
 - Menyinkronkan data antar perangkat milik pengguna yang sama.
-- Menghasilkan ringkasan pola dan usulan kuota lewat Anthropic (Claude), hanya setelah pengguna menyetujui pengiriman ringkasan agregat.
+- (Opsional) Menghasilkan ringkasan pola dan usulan kuota lewat Anthropic (Claude), hanya jika server dikonfigurasi dan pengguna menyetujui pengiriman ringkasan agregat.
 - Menunjukkan status koneksi ekstensi agar pengguna tahu apakah sinkron berhasil.
 
 ### Penyimpanan & keamanan
@@ -69,7 +69,7 @@ Semua data yang dikirim dirancang minimal, RLS-protected, dan tidak menyimpan to
 - Error heartbeat dibatasi dan disanitasi sebelum disimpan.
 
 ### Pihak ketiga
-- **Anthropic (Claude)**: menerima ringkasan agregat hanya saat pengguna menyetujui Focus Review satu per satu. Pengiriman tidak otomatis dan dapat diabaikan kapan saja. Usulan perubahan tidak pernah diterapkan tanpa tombol persetujuan di dashboard.
+- **Anthropic (Claude)** (opsional): hanya menerima ringkasan agregat jika server dikonfigurasi dengan `ANTHROPIC_API_KEY` dan pengguna menyetujui Focus Review satu per satu. Pengiriman tidak otomatis dan dapat diabaikan kapan saja. Usulan perubahan tidak pernah diterapkan tanpa tombol persetujuan di dashboard.
 - **Supabase**: penyedia database dan autentikasi.
 
 ## Justifikasi permission
@@ -123,4 +123,3 @@ Centang hanya membuktikan bagian yang disebutkan. Dimensi aset tidak membuktikan
 - [x] Teks listing menjelaskan data yang dikumpulkan secara jujur.
 - [ ] Fitur yang disebut di listing telah diverifikasi pada environment rilis, bukan hanya tersedia dalam kode.
 - [ ] Semua verifikasi otomatis dijalankan kembali dan lulus sebelum pengajuan.
-- [ ] `ANTHROPIC_API_KEY` terisi di environment deployment bila fitur review AI diiklankan di listing.
